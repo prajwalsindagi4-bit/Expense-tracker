@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartExpense — Personal Financial Awareness Companion</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Chart.js CDN for interactive visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons for clean, modern iconography -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+    <!-- Floating Top Navigation Bar (Matching Reference) -->
+    <header id="top-navbar">
+        <div class="nav-close-icon" id="nav-close-btn">
+            <i data-lucide="x"></i>
+        </div>
+
+        <nav>
+            <ul class="nav-menu">
+                <li>
+                    <a class="nav-item active" data-target="dashboard">
+                        <span>Home</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="nav-item" data-target="transactions">
+                        <span>Transactions</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="nav-item" data-target="spendings">
+                        <span>Analytics</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="nav-item" data-target="sandbox">
+                        <span>Budget</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="nav-item" data-target="split-expenses">
+                        <span>Split</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="nav-item" data-target="opportunities">
+                        <span>AI Insights</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="nav-item" data-target="settings">
+                        <span>Settings</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <div class="navbar-actions">
+            <button class="btn-simulate" id="open-simulator-btn">
+                <span>Simulate</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- 3D Floating Orb Decorations -->
+    <div class="orb-container" aria-hidden="true">
+        <div class="floating-orb orb-1"></div>
+        <div class="floating-orb orb-2"></div>
+        <div class="floating-orb orb-3"></div>
+    </div>
+
+    <!-- Main Content Area -->
+    <main id="main-content">
+        
+        <!-- DASHBOARD TAB -->
+        <section id="dashboard" class="page-section active">
+            <div class="page-hero-text">Dashboard</div>
+            <header>
+                <div>
+                    <h1 class="page-title">Financial Awareness</h1>
+                    <p class="subtitle">Your money explained simply. Quietly helping you grow.</p>
+                </div>
+                <div class="health-badge" id="overall-status-badge">Consistent Builder</div>
+            </header>
+
+            <!-- Wealth Awareness Stats Cards -->
+            <div class="dashboard-grid reveal-stagger">
+                <div class="card stat-card col-3 reveal">
+                    <div>
+                        <div class="stat-label">Net Wealth Built</div>
+                        <div class="stat-value" id="stat-networth">$42,650</div>
+                        <div class="stat-change up">
+                            <i data-lucide="trending-up"></i>
+                            <span>+4.2% this month</span>
+                        </div>
+                    </div>
+                    <div class="stat-icon blue">
+                        <i data-lucide="wallet"></i>
+                    </div>
+                </div>
+
+                <div class="card stat-card col-3 reveal">
+                    <div>
+                        <div class="stat-label">Spent This Month</div>
+                        <div class="stat-value" id="stat-spent">$2,410</div>
+                        <div class="stat-change down" id="stat-spent-change">
+                            <i data-lucide="trending-down"></i>
+                            <span>-12.4% vs last month</span>
+                        </div>
+                    </div>
+                    <div class="stat-icon danger">
+                        <i data-lucide="credit-card"></i>
+                    </div>
+                </div>
+
+                <div class="card stat-card col-3 reveal">
+                    <div>
+                        <div class="stat-label">Invested This Month</div>
+                        <div class="stat-value" id="stat-invested">$1,850</div>
+                        <div class="stat-change up">
+                            <i data-lucide="shield-check"></i>
+                            <span>100% SIP consistency</span>
+                        </div>
+                    </div>
+                    <div class="stat-icon purple">
+                        <i data-lucide="line-chart"></i>
+                    </div>
+                </div>
+
+                <div class="card stat-card col-3 reveal">
+                    <div>
+                        <div class="stat-label">Savings Rate</div>
+                        <div class="stat-value" id="stat-savingsrate">43%</div>
+                        <div class="stat-change up" id="stat-savingsrate-change">
+                            <i data-lucide="smile"></i>
+                            <span>Healthy buffer</span>
+                        </div>
+                    </div>
+                    <div class="stat-icon green">
+                        <i data-lucide="piggy-bank"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Health Score & Storytelling Grid -->
+            <div class="dashboard-grid">
+                <!-- Health Score Gauge -->
+                <div class="card col-4 reveal-left">
+                    <h3 class="stat-label">Financial Health</h3>
+                    <div class="health-score-container">
+                        <div class="health-gauge">
+                            <svg width="140" height="140">
+                                <circle class="bg-circle" cx="70" cy="70" r="65"></circle>
+                                <circle class="progress-circle" id="health-progress" cx="70" cy="70" r="65"></circle>
+                            </svg>
+                            <div class="health-score-value" id="health-score-text">
+                                78
+                                <span>/ 100</span>
+                            </div>
+                        </div>
+                        <p class="subtitle" id="health-score-message">Your emergency preparedness and investment consistency are outstanding!</p>
+                        
+                        <div class="health-factors-list" id="health-factors">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Storytelling Narrative -->
+                <div class="card storytelling-card col-8 reveal">
+                    <div class="story-header">
+                        <h3 class="stat-label">Your Financial Story (June 2026)</h3>
+                        <span class="ai-pill"><i data-lucide="sparkles"></i> AI Narrative</span>
+                    </div>
+                    <div class="story-body" id="story-narrative-container">
+                        <!-- AI narration text dynamically populated -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visual Charts -->
+            <div class="dashboard-grid">
+                <div class="card col-7 reveal-scale">
+                    <h3 class="stat-label">Wealth Development Trend</h3>
+                    <div style="height: 260px; position: relative;">
+                        <canvas id="wealthTrendChart"></canvas>
+                    </div>
+                </div>
+                <div class="card col-5 reveal-scale">
+                    <h3 class="stat-label">Month's Outflow Structure</h3>
+                    <div style="height: 260px; position: relative; display: flex; justify-content: center;">
+                        <canvas id="outflowChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TRANSACTIONS TAB -->
+        <section id="transactions" class="page-section">
+            <div class="page-hero-text">Transactions</div>
+            <header>
+                <div>
+                    <h1 class="page-title">Financial Activity</h1>
+                    <p class="subtitle">Automatic recognition verified by your context.</p>
+                </div>
+            </header>
+
+
+            <!-- Ledger Database -->
+            <!-- Ledger Database -->
+            <div class="card reveal" style="margin-bottom: 1.5rem;">
+                <div class="table-header">
+                    <div style="display: flex; gap: 0.75rem; align-items: center;">
+                        <span class="stat-label" style="margin-bottom: 0;">Ledger Records</span>
+                        <div class="search-bar">
+                            <i data-lucide="search" class="search-icon"></i>
+                            <input type="text" class="search-input" id="tx-search-input" placeholder="Search merchant, tag, or reason...">
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem;" id="tx-filter-container">
+                        <button class="opp-action-btn" style="background: rgba(99, 102, 241, 0.15); border-color: rgba(99, 102, 241, 0.35);" data-filter="all">All</button>
+                        <button class="opp-action-btn" data-filter="income">Income</button>
+                        <button class="opp-action-btn" data-filter="expense">Expenses</button>
+                        <button class="opp-action-btn" data-filter="investment">Investments</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="ledger-body" class="transactions-list reveal-stagger">
+                <!-- Populated dynamically -->
+            </div>
+        </section>
+
+        <!-- SPENDINGS TAB -->
+        <section id="spendings" class="page-section">
+            <div class="page-hero-text">Analytics</div>
+            <header>
+                <div>
+                    <h1 class="page-title">Spendings</h1>
+                    <p class="subtitle">See exactly where your money goes — categorized and live.</p>
+                </div>
+                <div style="display: flex; gap: 0.75rem; align-items: center;">
+                    <select class="form-input" id="spendings-month-select" style="width: 180px; padding: 0.5rem 0.75rem; font-size: 0.85rem;">
+                        <option value="5">June 2026</option>
+                        <option value="4">May 2026</option>
+                        <option value="3">April 2026</option>
+                        <option value="2">March 2026</option>
+                        <option value="1">February 2026</option>
+                        <option value="0">January 2026</option>
+                    </select>
+                </div>
+            </header>
+
+            <!-- Total Spent Banner -->
+            <div class="card spendings-total-banner reveal" id="spendings-total-card">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div class="stat-icon danger" style="width: 52px; height: 52px;">
+                        <i data-lucide="arrow-down-circle"></i>
+                    </div>
+                    <div>
+                        <div class="stat-label" style="margin-bottom: 0.2rem;">Total Spent This Month</div>
+                        <div class="stat-value" id="spendings-total-amount">$0</div>
+                    </div>
+                </div>
+                <div class="spendings-category-count" id="spendings-cat-count">
+                    across <strong>0</strong> categories
+                </div>
+            </div>
+
+            <!-- Category Breakdown Grid -->
+            <div class="spendings-grid" id="spendings-categories-container">
+                <!-- Dynamically populated category cards -->
+            </div>
+        </section>
+
+        <!-- OPPORTUNITIES TAB -->
+        <section id="opportunities" class="page-section">
+            <div class="page-hero-text">AI Insights</div>
+            <header>
+                <div>
+                    <h1 class="page-title">Opportunity Engine</h1>
+                    <p class="subtitle">Supportive recommendations and blind spot recognition.</p>
+                </div>
+            </header>
+
+            <div class="opportunity-grid">
+                <div>
+                    <h2 class="opp-section-title"><i data-lucide="trending-up" style="color: var(--success); vertical-align: middle; margin-right: 0.5rem;"></i>Growth Opportunities</h2>
+                    <div class="opp-list" id="opportunities-list">
+                        <!-- opportunities cards load here -->
+                    </div>
+                </div>
+                <div>
+                    <h2 class="opp-section-title"><i data-lucide="eye-off" style="color: var(--warning); vertical-align: middle; margin-right: 0.5rem;"></i>Blind Spot Warnings</h2>
+                    <div class="opp-list" id="blindspots-list">
+                        <!-- blind spot cards load here -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- WHAT-IF SANDBOX TAB -->
+        <section id="sandbox" class="page-section">
+            <div class="page-hero-text">Budget</div>
+            <header>
+                <div>
+                    <h1 class="page-title">What-If Sandbox</h1>
+                    <p class="subtitle">Simulate adjustments to understand long-term effects.</p>
+                </div>
+            </header>
+
+            <div class="card sandbox-container reveal">
+                <div class="sandbox-controls">
+                    <h3 class="stat-label">Model Settings</h3>
+                    
+                    <div class="sandbox-control-group">
+                        <div class="sandbox-label-row">
+                            <span class="form-label">Increase Monthly Investments</span>
+                            <span class="sandbox-slider-val" id="val-invest">+$0</span>
+                        </div>
+                        <input type="range" class="sandbox-slider" id="slider-invest" min="0" max="1000" step="50" value="0">
+                        <span class="hint-text">Allocate more cash flow directly into mutual fund/SIPs.</span>
+                    </div>
+
+                    <div class="sandbox-control-group">
+                        <div class="sandbox-label-row">
+                            <span class="form-label">Reduce Food Spending</span>
+                            <span class="sandbox-slider-val" id="val-dining">0%</span>
+                        </div>
+                        <input type="range" class="sandbox-slider" id="slider-dining" min="0" max="80" step="5" value="0">
+                        <span class="hint-text">Lower food/delivery splits. Savings go to investments.</span>
+                    </div>
+
+                    <div class="sandbox-control-group">
+                        <div class="sandbox-label-row">
+                            <span class="form-label">Invest Annual Bonus</span>
+                            <span class="sandbox-slider-val" id="val-bonus">0%</span>
+                        </div>
+                        <input type="range" class="sandbox-slider" id="slider-bonus" min="0" max="100" step="10" value="0">
+                        <span class="hint-text">Percentage of future annual bonuses sent to long-term index funds.</span>
+                    </div>
+
+                    <div class="sandbox-control-group">
+                        <div class="sandbox-label-row">
+                            <span class="form-label">Accelerate Debt Repayment</span>
+                            <span class="sandbox-slider-val" id="val-debt">No change</span>
+                        </div>
+                        <input type="range" class="sandbox-slider" id="slider-debt" min="0" max="300" step="50" value="0">
+                        <span class="hint-text">Add extra monthly prepayments to reduce liability.</span>
+                    </div>
+
+                    <div class="sandbox-output-summary" id="sandbox-summary-text">
+                        Adjust sliders to forecast how simple adjustments compound your wealth security and save debt interest over 15 years.
+                    </div>
+                </div>
+
+                <div class="sandbox-chart-container">
+                    <h3 class="stat-label">15-Year Wealth Projections</h3>
+                    <canvas id="sandboxChart"></canvas>
+                </div>
+            </div> <!-- close .card.sandbox-container -->
+        </section> <!-- close #sandbox -->
+
+        <!-- SPLIT EXPENSES TAB -->
+        <section id="split-expenses" class="page-section">
+            <div class="page-hero-text">Split</div>
+            <header>
+                <div>
+                    <h1 class="page-title">Split Expenses</h1>
+                    <p class="subtitle">Resolve shared checks, loans, and P2P payments seamlessly.</p>
+                </div>
+            </header>
+
+            <!-- Human Confirmation Area -->
+            <div class="confirmation-section" id="confirmation-inbox" style="display: none;">
+                <div class="confirm-card">
+                    <div class="confirm-header">
+                        <span class="confirm-alert-title">
+                            <i data-lucide="help-circle"></i> Human Context Required
+                        </span>
+                        <span class="hint-text">P2P payments require manual category check</span>
+                    </div>
+                    <div id="confirmation-pending-list" style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                        <!-- confirmation items will load here -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-grid">
+                <div class="card col-6">
+                    <h3 class="stat-label">Active Friend Groups</h3>
+                    <div style="display:flex; flex-direction:column; gap:1.25rem; margin-top: 1rem;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; padding: 0.75rem 1rem; background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); border-radius: 12px;">
+                            <div style="display:flex; align-items:center; gap:0.75rem;">
+                                <div class="stat-icon purple" style="width: 36px; height: 36px; font-size: 0.9rem;"><i data-lucide="users"></i></div>
+                                <div>
+                                    <div style="font-weight:500; font-size:0.9rem;">Sarah Connor (Dinner group)</div>
+                                    <div style="font-size:0.75rem; color:var(--text-muted);">Last split: 3 days ago</div>
+                                </div>
+                            </div>
+                            <span style="color:var(--danger); font-family:var(--font-heading); font-size:0.9rem; font-weight:500;">You owe $35.00</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; padding: 0.75rem 1rem; background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); border-radius: 12px;">
+                            <div style="display:flex; align-items:center; gap:0.75rem;">
+                                <div class="stat-icon green" style="width: 36px; height: 36px; font-size: 0.9rem;"><i data-lucide="users"></i></div>
+                                <div>
+                                    <div style="font-weight:500; font-size:0.9rem;">Mark Green (Roommates)</div>
+                                    <div style="font-size:0.75rem; color:var(--text-muted);">Monthly Utilities</div>
+                                </div>
+                            </div>
+                            <span style="color:var(--success); font-family:var(--font-heading); font-size:0.9rem; font-weight:500;">Owes you $55.00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card col-6">
+                    <h3 class="stat-label">Quick Split Simulator</h3>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.25rem;">
+                        Launch the simulation engine to generate mock splits and test verification rules.
+                    </p>
+                    <button class="opp-action-btn" id="open-simulator-split-btn" onclick="document.getElementById('simulator-modal').classList.add('active');" style="display: flex; align-items: center; gap: 0.5rem;">
+                        <i data-lucide="plus-circle" style="width: 16px; height: 16px;"></i> Simulate P2P Split
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- SETTINGS TAB -->
+        <section id="settings" class="page-section">
+            <div class="page-hero-text">Settings</div>
+            <header>
+                <div>
+                    <h1 class="page-title">Settings</h1>
+                    <p class="subtitle">Configure your AI wealth guardian settings and integrations.</p>
+                </div>
+            </header>
+
+            <div class="card col-12 reveal" style="max-width: 800px; margin: 0 auto;">
+                <h3 class="stat-label" style="font-size: 0.95rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.75rem; margin-bottom: 1.5rem;">System Configuration</h3>
+                
+                <div style="display:flex; flex-direction:column; gap:1.5rem;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <div style="font-weight:500; font-size:0.95rem;">AI Autonomous Categorization</div>
+                            <div style="font-size:0.8rem; color:var(--text-muted); margin-top:0.25rem;">Automatically categorize standard transactions using LLM heuristic mapping.</div>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" checked>
+                            <span class="switch-slider"></span>
+                        </label>
+                    </div>
+
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <div style="font-weight:500; font-size:0.95rem;">P2P Verification Threshold</div>
+                            <div style="font-size:0.8rem; color:var(--text-muted); margin-top:0.25rem;">Flag and request user review for P2P transactions exceeding set limits.</div>
+                        </div>
+                        <input type="number" class="search-input" style="width: 100px; text-align: right; padding-left: 1rem;" value="10">
+                    </div>
+
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <div style="font-weight:500; font-size:0.95rem;">Weekly Budget Summary Reports</div>
+                            <div style="font-size:0.8rem; color:var(--text-muted); margin-top:0.25rem;">Receive compiled financial metrics and blind spot alerts every Sunday.</div>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" checked>
+                            <span class="switch-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PROFILE TAB -->
+        <section id="profile" class="page-section">
+            <div class="page-hero-text">Profile</div>
+            <header>
+                <div>
+                    <h1 class="page-title">User Profile</h1>
+                    <p class="subtitle">Overview of your financial standings and subscription plan.</p>
+                </div>
+            </header>
+
+            <div class="dashboard-grid">
+                <div class="card col-4" style="text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2.5rem 1.5rem;">
+                    <div style="width: 90px; height: 90px; border-radius: 50%; background: linear-gradient(135deg, #7c5cfc, #38bdf8); display: flex; align-items: center; justify-content: center; border: 2px solid rgba(255,255,255,0.25); box-shadow: 0 0 20px rgba(124, 92, 252, 0.4); margin-bottom: 1rem;">
+                        <i data-lucide="user" style="width: 42px; height: 42px; color: white;"></i>
+                    </div>
+                    <h2 style="font-family: var(--font-display); font-size: 1.5rem; font-weight: 600; color: white;">Alex Mercer</h2>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem;">Member since Jan 2026</p>
+                    <span class="health-badge" style="margin-top: 1rem; border-color: rgba(56, 189, 248, 0.4); background: rgba(56, 189, 248, 0.15); color: #38bdf8;">Consistent Builder</span>
+                </div>
+
+                <div class="card col-8">
+                    <h3 class="stat-label">Linked Accounts</h3>
+                    
+                    <div style="display:flex; flex-direction:column; gap:1rem; margin-top: 1rem;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; padding: 0.75rem 1rem; background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); border-radius: 12px;">
+                            <div style="display:flex; align-items:center; gap:0.75rem;">
+                                <div class="stat-icon blue" style="width:36px; height:36px; font-size:0.9rem;"><i data-lucide="wallet"></i></div>
+                                <div>
+                                    <div style="font-weight:500; font-size:0.9rem; color: white;">Chase checking (...9821)</div>
+                                    <div style="font-size:0.75rem; color:var(--text-muted);">Connected 14 days ago</div>
+                                </div>
+                            </div>
+                            <span style="font-family:var(--font-heading); font-size:0.95rem; font-weight:500; color: white;">$14,250.00</span>
+                        </div>
+
+                        <div style="display:flex; justify-content:space-between; align-items:center; padding: 0.75rem 1rem; background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); border-radius: 12px;">
+                            <div style="display:flex; align-items:center; gap:0.75rem;">
+                                <div class="stat-icon purple" style="width:36px; height:36px; font-size:0.9rem;"><i data-lucide="trending-up"></i></div>
+                                <div>
+                                    <div style="font-weight:500; font-size:0.9rem; color: white;">Fidelity Brokerage (...4403)</div>
+                                    <div style="font-size:0.75rem; color:var(--text-muted);">Connected 14 days ago</div>
+                                </div>
+                            </div>
+                            <span style="font-family:var(--font-heading); font-size:0.95rem; font-weight:500; color: white;">$28,400.00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- P2P Frictionless Human Confirmation Overlay Modal -->
+    <div class="modal-overlay" id="confirm-modal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <span class="modal-title" style="display:flex; align-items:center; gap:0.5rem;"><i data-lucide="help-circle" style="color:var(--warning);"></i> Transaction Context</span>
+                <i data-lucide="x" class="modal-close" id="close-confirm-modal-btn"></i>
+            </div>
+            <div class="modal-body">
+                <p>We detected a P2P transaction of <strong id="modal-confirm-amount" style="color:var(--warning);">$120</strong> to <strong id="modal-confirm-payee">John Doe</strong>.</p>
+                <p style="font-size: 0.9rem; color: var(--text-secondary);">Because purposes for person-to-person transfers shift, please confirm the category for this event:</p>
+                
+                <div class="confirm-options">
+                    <button class="btn-option" data-category="Food" data-reason="Food Split">Food / Meal Split</button>
+                    <button class="btn-option" data-category="Travel" data-reason="Cab Split">Travel / Cab Split</button>
+                    <button class="btn-option" data-category="Rent" data-reason="Rent Share">Rent / Room Share</button>
+                    <button class="btn-option" data-category="Savings" data-reason="Loan Given">Loan Given</button>
+                    <button class="btn-option" data-category="Transfers" data-reason="Loan Repayment">Loan Repayment</button>
+                    <button class="btn-option" data-category="Miscellaneous" data-reason="Gift">Gift</button>
+                    <button class="btn-option" data-category="Bills" data-reason="Family Expense">Family Support</button>
+                    <button class="btn-option" data-category="Bills" data-reason="Shared Bill">Utility Split</button>
+                </div>
+
+                <div class="confirm-details-row">
+                    <span class="form-label" style="min-width: 60px;">Or tag:</span>
+                    <input type="text" class="confirm-input-text" id="modal-confirm-tags" placeholder="e.g. vacation, office, college" value="">
+                </div>
+                <div style="display:flex; justify-content: flex-end; margin-top: 1rem;">
+                    <button class="btn-primary" id="modal-confirm-submit-btn">
+                        <i data-lucide="check"></i> Confirm Context
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Simulation Modal Center -->
+    <div class="modal-overlay" id="simulator-modal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <span class="modal-title"><i data-lucide="terminal"></i> Transaction Stream Simulator</span>
+                <i data-lucide="x" class="modal-close" id="close-simulator-btn"></i>
+            </div>
+            <div class="modal-body">
+                <p class="hint-text">Choose a simulation preset to mimic bank updates or write a custom payment transfer. Watch the AI classify or prompt for context in real time!</p>
+                
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                    <button class="btn-option" onclick="simulatePreset('amazon')" style="text-align:center;">🛍️ Amazon Order ($45)</button>
+                    <button class="btn-option" onclick="simulatePreset('salary')" style="text-align:center;">💼 Payday Deposit ($4,500)</button>
+                    <button class="btn-option" onclick="simulatePreset('netflix')" style="text-align:center;">🎬 Netflix Bill ($15.49)</button>
+                    <button class="btn-option" onclick="simulatePreset('mutualfund')" style="text-align:center;">📈 Index Fund Buy ($500)</button>
+                    <button class="btn-option" onclick="simulatePreset('rent')" style="text-align:center;">🏠 Send Rent to Landlord ($1,200)</button>
+                    <button class="btn-option" onclick="simulatePreset('friend')" style="text-align:center;">👤 Send split to David ($25)</button>
+                </div>
+
+                <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 0.5rem 0;">
+                
+                <form id="simulator-form" onsubmit="event.preventDefault(); handleCustomSimulation();">
+                    <div class="form-group">
+                        <label class="form-label" for="sim-desc">Description / Payee</label>
+                        <input type="text" class="form-input" id="sim-desc" placeholder="e.g. Starbucks, Uber, Alex Mercer" required>
+                        <span class="hint-text">Typing a human name triggers the confirmation system.</span>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="sim-amount">Amount ($)</label>
+                            <input type="number" step="0.01" class="form-input" id="sim-amount" placeholder="25.00" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="sim-flow">Flow Direction</label>
+                            <select class="form-input" id="sim-flow">
+                                <option value="expense">Expense (Outflow)</option>
+                                <option value="income">Income (Inflow)</option>
+                                <option value="investment">Investment (Asset build)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 0.5rem; display: flex; justify-content: flex-end;">
+                        <button type="submit" class="btn-primary">
+                            <i data-lucide="play"></i> Stream Transaction
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div id="notification-center"></div>
+
+    <!-- JS Core Script loading order -->
+    <script src="transactions.js"></script>
+    <script src="health.js"></script>
+    <script src="storytelling.js"></script>
+    <script src="opportunities.js"></script>
+    <script src="whatif.js"></script>
+    <script src="app.js"></script>
+
+</body>
+</html>
