@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartExpense — Take Control of Your Money</title>
+    <meta name="description" content="SmartExpense is an AI-powered personal finance companion. Track expenses effortlessly, get intelligent insights, simulate budgets, and grow your wealth — all in one place.">
+    <meta name="keywords" content="expense tracker, personal finance, AI budgeting, smart money, investment tracking">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="landing.css?v=2">
+<body>
+
+    <!-- Scroll Progress Bar -->
+    <div id="scroll-progress"></div>
+
+    <!-- Navigation — hidden initially, revealed after card section -->
+    <nav id="landing-nav">
+        <a href="#" class="nav-logo" id="nav-logo">
+            <div class="nav-logo-icon">$</div>
+            <span>SmartExpense</span>
+        </a>
+
+        <ul class="nav-links" id="nav-links">
+            <li><a href="#features">Features</a></li>
+            <li><a href="#how-it-works">How It Works</a></li>
+            <li><a href="#security">Security</a></li>
+            <li><a href="#testimonials">Reviews</a></li>
+        </ul>
+
+        <div class="nav-actions">
+            <button class="btn-nav-login" onclick="window.location.href='index.html'" id="btn-login">Log in</button>
+            <button class="btn-nav-signup" onclick="window.location.href='index.html'" id="btn-signup">
+                <span>Sign up</span>
+                <span class="arrow">→</span>
+            </button>
+        </div>
+
+        <div class="nav-hamburger" id="nav-hamburger">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </nav>
+
+    <!-- ===== CARD HERO SECTION — Full white base, pinned scroll ===== -->
+    <section id="card-hero">
+        <div class="card-scene">
+            <!-- The dot symbol -->
+            <div class="hero-dot" id="hero-dot"></div>
+
+            <!-- Scroll hint text — visible at very start -->
+            <div class="scroll-hint" id="scroll-hint">
+                <span>Scroll to explore</span>
+                <div class="scroll-hint-line"></div>
+            </div>
+
+            <!-- The dark overlay that splashes -->
+            <div class="dark-scene-wrapper" id="dark-scene-wrapper">
+                <!-- Background greeting text -->
+                <div class="hero-greeting" id="hero-greeting">Hello, SmartExpense.</div>
+
+                <!-- The 3D credit card -->
+            <div class="credit-card" id="credit-card">
+                <div class="credit-card-inner">
+                    <!-- Back of the card -->
+                    <div class="credit-card-back">
+                        <div class="card-stripe"></div>
+                        <div style="padding: 10px 20px 5px; font-size: 7px; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 1px;">
+                            Authorized Signature
+                        </div>
+                        <div class="card-cvv-strip">
+                            <div style="flex-grow: 1; height: 100%; background: repeating-linear-gradient(45deg, #ddd, #ddd 2px, #ccc 2px, #ccc 4px);"></div>
+                            <span class="cvv-text">446</span>
+                        </div>
+                        <div style="margin-top: auto; padding: 15px 20px; font-size: 7px; color: rgba(255,255,255,0.4); line-height: 1.5; text-align: justify;">
+                            This card is issued by SmartExpense Bank pursuant to a license. Use of this card is subject to the terms and conditions of the Cardholder Agreement. If found, please return to: SmartExpense Inc, 123 Finance Way. For customer service, call 1-800-SMART-EXP.
+                        </div>
+                    </div>
+                    <div class="credit-card-front">
+                        <div class="card-chip"></div>
+                        <div class="card-contactless">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M8.5 16.5a5 5 0 0 1 0-9"/>
+                                <path d="M12 19a8 8 0 0 0 0-14"/>
+                                <path d="M15.5 21.5a11 11 0 0 0 0-19"/>
+                            </svg>
+                        </div>
+                        <div class="card-logo">SmartExpense</div>
+                        <div class="card-number">•••• •••• •••• 4465</div>
+                        <div class="card-bottom">
+                            <div class="card-holder">
+                                <span class="card-label">CARDHOLDER</span>
+                                <span class="card-name">SMART USER</span>
+                            </div>
+                            <div class="card-expiry">
+                                <span class="card-label">EXPIRES</span>
+                                <span class="card-name">12/28</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            </div> <!-- Close dark-scene-wrapper -->
+        </div>
+    </section>
+
+    <!-- ===== HERO SECTION — Phone + text, revealed after card ===== -->
+    <section id="hero">
+        <div class="hero-content">
+            <!-- Left: Title -->
+            <div class="hero-text scroll-reveal">
+                <div class="hero-label">
+                    <span class="dot"></span>
+                    AI-Powered Finance
+                </div>
+                <h1 class="hero-title">
+                    The way your<br>money should<br>work
+                </h1>
+            </div>
+
+            <!-- Center: Phone Mockup -->
+            <div class="phone-container" id="phone-container">
+                <div class="phone-mockup scroll-reveal" id="phone-mockup">
+                    <div class="phone-notch"></div>
+                    <div class="phone-screen">
+                        <div class="phone-screen-content">
+                            <div class="phone-header">
+                                <span class="phone-header-title">Money</span>
+                                <div class="phone-header-avatar"></div>
+                            </div>
+
+                            <div class="phone-balance-section">
+                                <div class="phone-balance-label">
+                                    Cash balance •• 4465 &nbsp;›
+                                </div>
+                                <div class="phone-balance-amount">$42,650</div>
+                                <div class="phone-actions">
+                                    <div class="phone-action-btn">Add money</div>
+                                    <div class="phone-action-btn">Withdraw</div>
+                                </div>
+                            </div>
+
+                            <div class="phone-status-bar">
+                                <span class="phone-status-label">
+                                    <span class="phone-status-dot"></span>
+                                    Savings rate
+                                </span>
+                                <span class="phone-status-value">43% healthy</span>
+                            </div>
+
+                            <div class="phone-savings-card">
+                                <div class="phone-savings-title">Investments</div>
+                                <div class="phone-savings-amount">$28,400</div>
+                                <div class="phone-savings-sub">↑ +4.2% this month</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Description -->
+            <div class="hero-description scroll-reveal">
+                <p class="hero-desc-text">
+                    From tracking every dollar to growing what you've got, SmartExpense makes managing your money effortless and instant — powered by AI.
+                </p>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== FEATURES SECTION ===== -->
+    <section id="features">
+        <div class="section-inner">
+            <div class="section-label scroll-reveal">WHAT WE OFFER</div>
+            <h2 class="section-title scroll-reveal">Everything you need<br>to master your money</h2>
+            <p class="section-subtitle scroll-reveal">
+                Smart categorization, real-time insights, and future projections — 
+                all working together so you don't have to.
+            </p>
+
+            <div class="features-grid">
+                <div class="feature-card scroll-reveal">
+                    <div class="feature-icon">📊</div>
+                    <div class="feature-card-title">AI Categorization</div>
+                    <div class="feature-card-desc">Every transaction auto-classified by our AI engine. Merchants, P2P transfers, subscriptions — all recognized instantly.</div>
+                </div>
+
+                <div class="feature-card scroll-reveal">
+                    <div class="feature-icon">💡</div>
+                    <div class="feature-card-title">Smart Insights</div>
+                    <div class="feature-card-desc">Get AI-generated narratives about your spending patterns, blind spots, and growth opportunities each month.</div>
+                </div>
+
+                <div class="feature-card scroll-reveal">
+                    <div class="feature-icon">🔮</div>
+                    <div class="feature-card-title">What-If Sandbox</div>
+                    <div class="feature-card-desc">Simulate budget changes and see 15-year wealth projections. Visualize how small adjustments compound over time.</div>
+                </div>
+
+                <div class="feature-card scroll-reveal">
+                    <div class="feature-icon">👥</div>
+                    <div class="feature-card-title">Split Expenses</div>
+                    <div class="feature-card-desc">Resolve shared bills, P2P payments, and group expenses with smart context verification for every transfer.</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== STATS SECTION ===== -->
+    <section id="stats">
+        <div class="section-inner">
+            <h2 class="section-title scroll-reveal">SmartExpense makes<br>finance simple</h2>
+            <p class="section-subtitle scroll-reveal">
+                Trusted by people who want real clarity — not just charts and numbers.
+            </p>
+
+            <div class="stats-grid">
+                <div class="stat-card scroll-reveal">
+                    <div class="stat-card-value">
+                        <span class="counter" data-target="99.9">0</span>%
+                    </div>
+                    <div class="stat-card-label">Auto-categorization<br>accuracy rate</div>
+                </div>
+
+                <div class="stat-card scroll-reveal">
+                    <div class="stat-card-value">
+                        <span class="counter" data-target="50">0</span>+
+                    </div>
+                    <div class="stat-card-label">Expense categories<br>and merchant rules</div>
+                </div>
+
+                <div class="stat-card scroll-reveal">
+                    <div class="stat-card-value">
+                        4.9<span class="star">★</span>
+                    </div>
+                    <div class="stat-card-label">User satisfaction<br>rating</div>
+                </div>
+
+
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== HOW IT WORKS — TRACK ===== -->
+    <section id="how-it-works" class="feature-detail-section">
+        <div class="feature-detail-inner">
+            <div class="scroll-reveal">
+                <div class="feature-detail-label">TRACK EVERYTHING</div>
+                <h2 class="feature-detail-title">
+                    We make it easy to<br>track every transaction.<br>Automatically.
+                </h2>
+                <p class="feature-detail-desc">
+                    Our AI-powered engine recognizes merchants, flags P2P payments for context, and categorizes every dollar — 
+                    so you always know where your money goes.
+                </p>
+                <a href="index.html" class="btn-feature-learn" id="learn-tracking">
+                    How tracking works
+                </a>
+            </div>
+
+            <div class="feature-showcase-card scroll-reveal">
+                <div class="app-preview">
+                    <div class="app-preview-header">
+                        <span class="app-preview-title">Recent Transactions</span>
+                        <span class="app-preview-badge">AI Verified</span>
+                    </div>
+                    <div class="mini-tx-row">
+                        <div class="mini-tx-left">
+                            <div class="mini-tx-icon food">🍕</div>
+                            <div>
+                                <div class="mini-tx-name">DoorDash Delivery</div>
+                                <div class="mini-tx-cat">Food · Dining</div>
+                            </div>
+                        </div>
+                        <div class="mini-tx-amount expense">-$32.50</div>
+                    </div>
+                    <div class="mini-tx-row">
+                        <div class="mini-tx-left">
+                            <div class="mini-tx-icon income">💼</div>
+                            <div>
+                                <div class="mini-tx-name">Salary Deposit</div>
+                                <div class="mini-tx-cat">Income · Paycheck</div>
+                            </div>
+                        </div>
+                        <div class="mini-tx-amount income">+$4,500</div>
+                    </div>
+                    <div class="mini-tx-row">
+                        <div class="mini-tx-left">
+                            <div class="mini-tx-icon shopping">🛍️</div>
+                            <div>
+                                <div class="mini-tx-name">Amazon Shopping</div>
+                                <div class="mini-tx-cat">Shopping · Retail</div>
+                            </div>
+                        </div>
+                        <div class="mini-tx-amount expense">-$45.00</div>
+                    </div>
+                    <div class="mini-tx-row">
+                        <div class="mini-tx-left">
+                            <div class="mini-tx-icon invest">📈</div>
+                            <div>
+                                <div class="mini-tx-name">Fidelity SIP</div>
+                                <div class="mini-tx-cat">Investments · Index Fund</div>
+                            </div>
+                        </div>
+                        <div class="mini-tx-amount invest">-$800.00</div>
+                    </div>
+                    <div class="mini-tx-row">
+                        <div class="mini-tx-left">
+                            <div class="mini-tx-icon bills">🎬</div>
+                            <div>
+                                <div class="mini-tx-name">Netflix</div>
+                                <div class="mini-tx-cat">Bills · Subscription</div>
+                            </div>
+                        </div>
+                        <div class="mini-tx-amount expense">-$15.49</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== AI INSIGHTS DETAIL ===== -->
+    <section class="feature-detail-section">
+        <div class="feature-detail-inner reverse">
+            <div class="scroll-reveal">
+                <div class="feature-detail-label">AI-POWERED INSIGHTS</div>
+                <h2 class="feature-detail-title">
+                    See what's really<br>happening with<br>your money
+                </h2>
+                <p class="feature-detail-desc">
+                    Our AI writes a personal financial narrative every month — highlighting patterns, 
+                    celebrating wins, and gently flagging blind spots you might have missed.
+                </p>
+                <a href="index.html" class="btn-feature-learn" id="learn-insights">
+                    Explore AI insights
+                </a>
+            </div>
+
+            <div class="feature-showcase-card scroll-reveal">
+                <div class="app-preview">
+                    <div class="app-preview-header">
+                        <span class="app-preview-title">Your Financial Story</span>
+                        <span class="app-preview-badge">✨ AI Narrative</span>
+                    </div>
+                    <div style="padding: 0.5rem 0;">
+                        <p style="font-size: 0.82rem; color: rgba(255,255,255,0.85); line-height: 1.7; margin-bottom: 1rem;">
+                            "This month, you've shown impressive discipline. Your savings rate of <span style="color: #ffffff; font-weight: 700;">43%</span> 
+                            puts you ahead of 89% of users in your bracket."
+                        </p>
+                        <p style="font-size: 0.82rem; color: rgba(255,255,255,0.85); line-height: 1.7; margin-bottom: 1rem;">
+                            "Investment consistency remains at <span style="color: rgba(255,255,255,0.9); font-weight: 700;">100% SIP adherence</span> — 
+                            you haven't missed a single month this year."
+                        </p>
+                        <p style="font-size: 0.82rem; color: rgba(255,255,255,0.6); line-height: 1.7;">
+                            "One pattern to watch: Food delivery spending has increased 18% vs. last quarter. 
+                            Consider a weekly meal prep to reclaim ~$120/month."
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== SECURITY SECTION ===== -->
+    <section id="security">
+        <div class="section-inner">
+            <div class="security-icon scroll-reveal">🛡️</div>
+            <h2 class="section-title scroll-reveal">Your financial data<br>stays protected</h2>
+            <p class="section-subtitle scroll-reveal">
+                SmartExpense is built with security at its core. Your data is encrypted, 
+                never sold, and always under your control.
+            </p>
+
+            <div class="security-cards">
+                <div class="security-card scroll-reveal">
+                    <div class="security-card-icon">🔒</div>
+                    <div class="security-card-title">End-to-End Encryption</div>
+                    <div class="security-card-desc">All data transmitted and stored with bank-grade AES-256 encryption. Your transactions are yours alone.</div>
+                </div>
+
+                <div class="security-card scroll-reveal">
+                    <div class="security-card-icon">📍</div>
+                    <div class="security-card-title">Activity Monitoring</div>
+                    <div class="security-card-desc">Real-time alerts for unusual activity. Verify login sessions and track device access at any time.</div>
+                </div>
+
+                <div class="security-card scroll-reveal">
+                    <div class="security-card-icon">🔑</div>
+                    <div class="security-card-title">Privacy First</div>
+                    <div class="security-card-desc">We never sell your data. Period. Your financial information is used only to power your personal insights.</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== TESTIMONIALS ===== -->
+    <section id="testimonials">
+        <div class="section-inner">
+            <h2 class="section-title scroll-reveal">What users say about<br>SmartExpense</h2>
+
+            <div class="testimonials-grid">
+                <div class="testimonial-card scroll-reveal">
+                    <div class="testimonial-text">
+                        "The AI categorization is incredibly accurate. I haven't manually tagged a single transaction in months."
+                    </div>
+                    <div class="testimonial-author">
+                        <div class="testimonial-avatar a1">SM</div>
+                        <div>
+                            <div class="testimonial-name">Sarah Mitchell</div>
+                            <div class="testimonial-role">Product Designer</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="testimonial-card scroll-reveal">
+                    <div class="testimonial-text">
+                        "The What-If Sandbox changed my perspective on saving. Seeing 15-year projections made me instantly invest more."
+                    </div>
+                    <div class="testimonial-author">
+                        <div class="testimonial-avatar a2">RK</div>
+                        <div>
+                            <div class="testimonial-name">Raj Kumar</div>
+                            <div class="testimonial-role">Software Engineer</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="testimonial-card scroll-reveal">
+                    <div class="testimonial-text">
+                        "Finally, a finance app that tells me a story instead of just showing charts. The AI narrative is pure gold."
+                    </div>
+                    <div class="testimonial-author">
+                        <div class="testimonial-avatar a3">EW</div>
+                        <div>
+                            <div class="testimonial-name">Emma Wilson</div>
+                            <div class="testimonial-role">Freelance Writer</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== FINAL CTA ===== -->
+    <section id="final-cta">
+        <div class="section-inner cta-inner">
+            <h2 class="section-title scroll-reveal">Ready to take<br>control of your<br>finances?</h2>
+            <p class="section-subtitle scroll-reveal">
+                Join thousands who are already building wealth effortlessly with SmartExpense. 
+                No hidden fees. No complexity. Just clarity.
+            </p>
+            <a href="index.html" class="btn-cta-big scroll-reveal" id="final-cta-btn">
+                <span>Get Started — It's Free</span>
+                <span class="arrow">→</span>
+            </a>
+        </div>
+    </section>
+
+    <!-- ===== FOOTER ===== -->
+    <footer id="landing-footer">
+        <div class="footer-inner">
+            <div class="footer-logo">
+                <div class="footer-logo-icon">$</div>
+                <span>SmartExpense</span>
+            </div>
+
+
+
+            <div class="footer-copy">© 2026 SmartExpense. All rights reserved.</div>
+        </div>
+    </footer>
+
+    <script src="landing.js"></script>
+</body>
+</html>
