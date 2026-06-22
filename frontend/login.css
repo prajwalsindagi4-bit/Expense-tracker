@@ -337,40 +337,25 @@ body {
     align-items: center;
 }
 
-/* Decorative Rings */
-.deco-ring {
+/* Soft Glow Behind Card */
+.card-back-glow {
     position: absolute;
-    border-radius: 50%;
-    border: 1px dashed rgba(255, 255, 255, 0.08);
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    z-index: 0;
+    width: 350px;
+    height: 200px;
+    background: rgba(255, 255, 255, 0);
+    border-radius: 50%;
+    filter: blur(80px);
+    z-index: 1;
     pointer-events: none;
-    transition: border-color 0.8s ease, box-shadow 0.8s ease;
+    transition: background 0.8s ease;
 }
 
-.deco-ring.pulse {
-    border-color: rgba(255, 255, 255, 0.35);
-    box-shadow: 0 0 25px rgba(255, 255, 255, 0.1);
-    transition: border-color 0.05s ease, box-shadow 0.05s ease;
-}
-
-.ring-1 {
-    width: 420px;
-    height: 420px;
-    animation: spin 30s linear infinite;
-}
-
-.ring-2 {
-    width: 560px;
-    height: 560px;
-    animation: spin 45s linear infinite reverse;
-}
-
-@keyframes spin {
-    from { transform: translate(-50%, -50%) rotate(0deg); }
-    to   { transform: translate(-50%, -50%) rotate(360deg); }
+.card-back-glow.pulse {
+    background: rgba(255, 255, 255, 0.25);
+    transition: background 0.05s ease;
 }
 
 /* ══════════════════════════════════

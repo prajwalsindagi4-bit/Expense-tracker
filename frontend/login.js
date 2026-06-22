@@ -90,19 +90,19 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ── Keypress Pulse Effect ──
-    const rings = document.querySelectorAll('.deco-ring');
+    const cardGlow = document.getElementById('card-back-glow');
     let pulseTimeout;
     
     function triggerPulse() {
         // Add the pulse class for a quick jolt
         creditCard.classList.add('pulse');
-        rings.forEach(r => r.classList.add('pulse'));
+        if (cardGlow) cardGlow.classList.add('pulse');
         
         // Remove it shortly after so the slower recoil transition takes over
         clearTimeout(pulseTimeout);
         pulseTimeout = setTimeout(() => {
             creditCard.classList.remove('pulse');
-            rings.forEach(r => r.classList.remove('pulse'));
+            if (cardGlow) cardGlow.classList.remove('pulse');
         }, 80);
     }
 
