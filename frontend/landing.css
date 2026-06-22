@@ -17,7 +17,7 @@
     --text-secondary: rgba(255, 255, 255, 0.6);
     --text-muted: rgba(255, 255, 255, 0.35);
 
-    --font-display: 'Outfit', sans-serif;
+    --font-display: 'Inter', sans-serif;
     --font-body: 'Inter', sans-serif;
 
     --radius-sm: 16px;
@@ -36,6 +36,7 @@ body {
     background: var(--bg-base);
     color: var(--text-primary);
     font-family: var(--font-body);
+    line-height: 1.6;
     min-height: 100vh;
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
@@ -757,7 +758,6 @@ body {
 
 .hero-desc-text {
     font-size: 1rem;
-    line-height: 1.7;
     color: var(--text-secondary);
     font-weight: 300;
     margin-bottom: 2rem;
@@ -833,7 +833,7 @@ body {
 .section-inner {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 8rem 3rem;
+    padding: 6rem 3rem;
     text-align: center;
 }
 
@@ -859,7 +859,6 @@ body {
 .section-subtitle {
     font-size: 1rem;
     color: var(--text-secondary);
-    line-height: 1.7;
     max-width: 600px;
     margin: 0 auto 3.5rem;
     font-weight: 300;
@@ -889,7 +888,6 @@ body {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 1.5rem;
-    margin-top: 2rem;
 }
 
 .feature-card {
@@ -897,7 +895,7 @@ body {
     border: 1px solid var(--glass-border);
     border-top: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: var(--radius-md);
-    padding: 2rem 1.5rem;
+    padding: 2rem;
     text-align: left;
     transition: all 0.4s var(--ease-out);
     position: relative;
@@ -945,7 +943,6 @@ body {
 
 .feature-card-desc {
     font-size: 0.85rem;
-    line-height: 1.65;
     color: var(--text-secondary);
     font-weight: 300;
 }
@@ -973,7 +970,6 @@ body {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 1.5rem;
-    margin-top: 2rem;
 }
 
 .stat-card {
@@ -981,7 +977,7 @@ body {
     border: 1px solid var(--glass-border);
     border-top: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: var(--radius-md);
-    padding: 2.5rem 1.5rem;
+    padding: 2rem;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -1010,7 +1006,6 @@ body {
 .stat-card-label {
     font-size: 0.85rem;
     color: var(--text-secondary);
-    line-height: 1.5;
     font-weight: 300;
 }
 
@@ -1069,7 +1064,7 @@ body {
 .feature-detail-inner {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 8rem 3rem;
+    padding: 6rem 3rem;
     display: grid;
     grid-template-columns: 1fr 1.2fr;
     gap: 4rem;
@@ -1106,7 +1101,6 @@ body {
 
 .feature-detail-desc {
     font-size: 0.95rem;
-    line-height: 1.7;
     color: var(--text-secondary);
     font-weight: 300;
     margin-bottom: 2rem;
@@ -1141,7 +1135,7 @@ body {
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: var(--radius-lg);
-    padding: 1.5rem;
+    padding: 2rem;
     backdrop-filter: blur(20px);
 }
 
@@ -1251,7 +1245,6 @@ body {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 1.5rem;
-    margin-top: 2rem;
 }
 
 .security-card {
@@ -1259,7 +1252,7 @@ body {
     border: 1px solid var(--glass-border);
     border-top: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: var(--radius-md);
-    padding: 2rem 1.5rem;
+    padding: 2rem;
     text-align: left;
     transition: all 0.4s var(--ease-out);
 }
@@ -1286,7 +1279,6 @@ body {
 
 .security-card-desc {
     font-size: 0.85rem;
-    line-height: 1.65;
     color: var(--text-secondary);
     font-weight: 300;
 }
@@ -1314,7 +1306,6 @@ body {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 1.5rem;
-    margin-top: 2rem;
 }
 
 .testimonial-card {
@@ -1322,7 +1313,7 @@ body {
     border: 1px solid var(--glass-border);
     border-top: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: var(--radius-md);
-    padding: 2rem 1.5rem;
+    padding: 2rem;
     text-align: left;
     transition: all 0.4s var(--ease-out);
     display: flex;
@@ -1338,7 +1329,6 @@ body {
 
 .testimonial-text {
     font-size: 0.95rem;
-    line-height: 1.7;
     color: var(--text-secondary);
     font-weight: 300;
     font-style: italic;
@@ -1400,8 +1390,6 @@ body {
 
 .cta-inner {
     text-align: center;
-    padding-top: 6rem;
-    padding-bottom: 6rem;
 }
 
 .btn-cta-big {
@@ -1574,11 +1562,11 @@ body {
     }
 
     .section-inner {
-        padding: 5rem 1.5rem;
+        padding: 4rem 1.5rem;
     }
 
     .feature-detail-inner {
-        padding: 5rem 1.5rem;
+        padding: 4rem 1.5rem;
     }
 
     .features-grid,
