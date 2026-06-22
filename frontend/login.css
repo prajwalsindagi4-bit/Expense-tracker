@@ -347,6 +347,13 @@ body {
     transform: translate(-50%, -50%);
     z-index: 0;
     pointer-events: none;
+    transition: border-color 0.8s ease, box-shadow 0.8s ease;
+}
+
+.deco-ring.pulse {
+    border-color: rgba(255, 255, 255, 0.35);
+    box-shadow: 0 0 25px rgba(255, 255, 255, 0.1);
+    transition: border-color 0.05s ease, box-shadow 0.05s ease;
 }
 
 .ring-1 {
@@ -376,7 +383,13 @@ body {
     margin-bottom: 2.5rem;
     position: relative;
     z-index: 2;
-    transition: all 1s cubic-bezier(0.25, 0.1, 0.25, 1);
+    transition: all 0.6s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.credit-card.pulse {
+    transform: scale(1.02);
+    filter: brightness(1.15);
+    transition: transform 0.05s ease-out, filter 0.05s ease-out;
 }
 
 .credit-card-inner {

@@ -89,6 +89,28 @@ document.addEventListener('DOMContentLoaded', () => {
         input.classList.add('card-linked');
     });
 
+    // ── Keypress Pulse Effect ──
+    const rings = document.querySelectorAll('.deco-ring');
+    let pulseTimeout;
+    
+    function triggerPulse() {
+        // Add the pulse class for a quick jolt
+        creditCard.classList.add('pulse');
+        rings.forEach(r => r.classList.add('pulse'));
+        
+        // Remove it shortly after so the slower recoil transition takes over
+        clearTimeout(pulseTimeout);
+        pulseTimeout = setTimeout(() => {
+            creditCard.classList.remove('pulse');
+            rings.forEach(r => r.classList.remove('pulse'));
+        }, 80);
+    }
+
+    // Attach pulse to all form inputs
+    document.querySelectorAll('input').forEach(input => {
+        input.addEventListener('input', triggerPulse);
+    });
+
     // ── Form Toggle ──
     const toSignupBtn = document.getElementById('to-signup');
     const toLoginBtn = document.getElementById('to-login');
