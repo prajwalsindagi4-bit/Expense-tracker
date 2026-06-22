@@ -1,4 +1,4 @@
-// SmartExpense AI — Orchestrator & UI Controller
+// Manmo AI — Orchestrator & UI Controller
 
 let wealthChartInstance = null;
 let outflowChartInstance = null;

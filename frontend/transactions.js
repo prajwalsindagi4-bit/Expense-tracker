@@ -1,4 +1,4 @@
-// SmartExpense AI — Transaction Ledger & API Interface
+// Manmo AI — Transaction Ledger & API Interface
 
 let transactions = [];
 let pendingConfirmations = [];

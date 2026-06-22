@@ -1,5 +1,5 @@
 /* ============================================================
-   SmartExpense Landing Page — Scroll-Driven Card Animation
+   Manmo Landing Page — Scroll-Driven Card Animation
    & Section Reveal System
    ============================================================ */
 

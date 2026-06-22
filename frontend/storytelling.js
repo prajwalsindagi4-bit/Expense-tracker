@@ -1,4 +1,4 @@
-// SmartExpense AI — Financial Storyteller
+// Manmo AI — Financial Storyteller
 
 function generateFinancialStory(txs) {
     const now = new Date();

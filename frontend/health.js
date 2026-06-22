@@ -1,4 +1,4 @@
-// SmartExpense AI — Financial Health Score Calculator
+// Manmo AI — Financial Health Score Calculator
 
 function calculateFinancialHealth(txs) {
     // We base health on last 3 months of activity to ensure accuracy and relevance

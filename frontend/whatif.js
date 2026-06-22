@@ -1,4 +1,4 @@
-// SmartExpense AI — What-If Projection Engine
+// Manmo AI — What-If Projection Engine
 
 function calculateWhatIfProjections(params) {
     // Inputs:

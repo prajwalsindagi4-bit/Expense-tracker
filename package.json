@@ -1,7 +1,7 @@
 {
-  "name": "smartexpense-ai",
+  "name": "manmo-ai",
   "version": "1.0.0",
-  "description": "SmartExpense AI - Personal Financial Awareness Companion",
+  "description": "Manmo AI - Personal Financial Awareness Companion",
   "main": "index.html",
   "scripts": {
     "dev": "npx -y http-server -p 3000"

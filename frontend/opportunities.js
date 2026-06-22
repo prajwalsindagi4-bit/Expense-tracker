@@ -1,4 +1,4 @@
-// SmartExpense AI — Opportunity & Blind Spot Engines
+// Manmo AI — Opportunity & Blind Spot Engines
 
 function detectOpportunities(txs) {
     const list = [];
