@@ -19,6 +19,26 @@ body {
     font-family: var(--font-main);
     line-height: 1.6;
     overflow: hidden;
+    animation: pageEntryScale 0.8s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+}
+
+@keyframes pageEntryScale {
+    0% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.page-entry-overlay {
+    position: fixed;
+    inset: 0;
+    background: #050507;
+    z-index: 99999;
+    pointer-events: none;
+    animation: pageEntryFade 0.8s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+}
+
+@keyframes pageEntryFade {
+    0% { opacity: 1; }
+    100% { opacity: 0; }
 }
 
 /* ══════════════════════════════════
@@ -354,7 +374,7 @@ body {
 }
 
 .card-back-glow.pulse {
-    background: rgba(255, 255, 255, 0.55);
+    background: rgba(255, 255, 255, 0.85);
     transition: background 0.05s ease;
 }
 

@@ -53,112 +53,99 @@
         }
     }
 
-    // ===== 3D CARD SCROLL ANIMATION =====
-    // The card hero is 400vh tall with a sticky scene.
-    // Scroll progress through the card hero drives the card animation.
+    // ===== INTRO ANIMATION (Auto-plays on load) =====
+    // t goes from 0.0 to 1.0 over ~1.5 seconds
+    function renderIntroFrame(t) {
+        const heroGreeting = document.getElementById('hero-greeting');
+        const scrollHint = document.getElementById('scroll-hint');
+
+        // Ensure card is completely hidden during intro
+        if (creditCard) {
+            creditCard.style.opacity = 0;
+        }
+
+        if (heroGreeting) {
+            // Fade in the text smoothly
+            heroGreeting.style.opacity = t;
+            heroGreeting.style.transform = `translate(-50%, calc(-50% + ${20 - (t * 20)}px))`;
+            heroGreeting.style.backgroundPosition = `100% 0`;
+        }
+
+        if (scrollHint) {
+            if (t <= 0.50) {
+                scrollHint.style.opacity = 0;
+            } else {
+                const p = (t - 0.50) / 0.50;
+                scrollHint.style.opacity = p;
+            }
+        }
+    }
+
+    let introFinished = false;
+    let maxFillProgress = 0;
+    let maxScrollProgress = 0;
+
     function updateCardAnimation() {
-        if (!creditCard || !cardHero) return;
+        if (!introFinished || !creditCard || !cardHero) return;
 
         const heroTop = cardHero.offsetTop;
         const heroHeight = cardHero.offsetHeight;
         const scrollY = window.scrollY;
 
-        // Progress: 0 = top of card-hero, 1 = end of card-hero
-        const rawProgress = (scrollY - heroTop) / (heroHeight - window.innerHeight);
-        let progress = Math.max(0, Math.min(1, rawProgress));
-
-        // Lock the animation from reversing past the splash once completed
-        if (progress >= 0.35) {
-            window._hasSplashed = true;
-        }
-        if (window._hasSplashed && progress < 0.35) {
-            progress = 0.35;
+        let s = (scrollY - heroTop) / (heroHeight - window.innerHeight);
+        s = Math.max(0, Math.min(1, s));
+        
+        if (s > maxScrollProgress) {
+            maxScrollProgress = s;
         }
 
-        const darkWrapper = document.getElementById('dark-scene-wrapper');
         const heroGreeting = document.getElementById('hero-greeting');
-        const heroDot = document.getElementById('hero-dot');
-
-        // ---- Phase 0: Dot moves up (0.0 - 0.15) ----
-        if (heroDot) {
-            if (progress <= 0.15) {
-                const p = progress / 0.15;
-                const dotY = 50 - (p * 40); // 50% to 10%
-                heroDot.style.top = `${dotY}%`;
-                heroDot.style.opacity = 1;
-            } else if (progress <= 0.20) {
-                // Fades out as splash happens
-                const p = (progress - 0.15) / 0.05;
-                heroDot.style.top = `10%`;
-                heroDot.style.opacity = 1 - p;
-            } else {
-                heroDot.style.opacity = 0;
-            }
-        }
-
-        // ---- Phase 1: Splash Sequence (0.15 - 0.30) ----
-        if (darkWrapper) {
-            if (progress <= 0.15) {
-                // Hidden
-                darkWrapper.style.clipPath = `circle(0px at 50% 10%)`;
-            } else if (progress <= 0.30) {
-                // Splash expands from the top (where the dollar is)
-                const p = (progress - 0.15) / 0.15;
-                darkWrapper.style.clipPath = `circle(calc(${p * 150}vmax) at 50% 10%)`;
-            } else {
-                darkWrapper.style.clipPath = `circle(200vmax at 50% 10%)`;
-            }
-        }
-
-        // ---- Phase 2: Greeting (0.15 - 0.45) ----
         if (heroGreeting) {
-            if (progress <= 0.15) {
-                heroGreeting.style.opacity = 0;
-                heroGreeting.style.transform = `translate(-50%, calc(-50% + 50px))`;
-            } else if (progress <= 0.30) {
-                // Fade in synchronously with splash
-                const p = (progress - 0.15) / 0.15;
-                heroGreeting.style.opacity = p;
-                heroGreeting.style.transform = `translate(-50%, calc(-50% + ${50 - (p * 50)}px))`;
-            } else if (progress <= 0.40) {
-                // Stay
+            if (s <= 0.20) {
+                // Track max fill progress so it stays filled when scrolling up
+                const p = s / 0.20;
+                if (p > maxFillProgress) maxFillProgress = p;
+
                 heroGreeting.style.opacity = 1;
+                heroGreeting.style.backgroundPosition = `${100 - (maxFillProgress * 100)}% 0`;
                 heroGreeting.style.transform = `translate(-50%, -50%)`;
-            } else if (progress <= 0.45) {
-                // Fade out
-                const p = (progress - 0.40) / 0.05;
+            } else if (s <= 0.25) {
+                maxFillProgress = 1; // Ensure it's fully tracked
+                // Fade out full text quickly and move it slightly up
+                const p = (s - 0.20) / 0.05;
                 heroGreeting.style.opacity = 1 - p;
+                heroGreeting.style.backgroundPosition = `0% 0`;
                 heroGreeting.style.transform = `translate(-50%, calc(-50% - ${p * 50}px))`;
             } else {
+                maxFillProgress = 1;
                 heroGreeting.style.opacity = 0;
             }
         }
 
-        // ---- Phase 3: Card (0.45 - 1.0) ----
         let rotateX = 0, rotateY = 0, rotateZ = 0, scale = 1, translateY = window.innerHeight, opacity = 0;
 
-        if (progress <= 0.45) {
+        if (s <= 0.25) {
             translateY = window.innerHeight;
             opacity = 0;
-        } else if (progress <= 0.60) {
+        } else if (s <= 0.45) {
             // Fade in and rise from bottom
-            const p = (progress - 0.45) / 0.15;
+            const p = (s - 0.25) / 0.20;
             rotateX = 40 - (p * 40);
             rotateY = 0;
             scale = 0.5 + (p * 0.5);
             translateY = window.innerHeight - (p * window.innerHeight);
             opacity = p;
-        } else if (progress <= 0.85) {
+        } else if (s <= 0.75) {
             // Spin
-            const p = (progress - 0.60) / 0.25;
+            const p = (s - 0.45) / 0.30;
             rotateX = 0;
             rotateY = p * 360;
             scale = 1.0;
             translateY = 0;
             opacity = 1;
-        } else if (progress <= 0.95) {
+        } else if (s <= 0.85) {
             // Scale up
-            const p = (progress - 0.85) / 0.10;
+            const p = (s - 0.75) / 0.10;
             rotateX = 0;
             rotateY = 360;
             scale = 1.0 + (p * 0.8);
@@ -166,7 +153,7 @@
             opacity = 1 - (p * 0.6);
         } else {
             // Fade out
-            const p = (progress - 0.95) / 0.05;
+            const p = (s - 0.85) / 0.15;
             rotateX = 0;
             rotateY = 360;
             scale = 1.8 + (p * 1.0);
@@ -176,20 +163,14 @@
 
         const cardInner = creditCard.querySelector('.credit-card-inner');
         if (cardInner) {
-            cardInner.style.transform = `
-                translateY(${translateY}px)
-                scale(${scale})
-                rotateX(${rotateX}deg)
-                rotateY(${rotateY}deg)
-                rotateZ(${rotateZ}deg)
-            `;
+            cardInner.style.transform = `translateY(${translateY}px) scale(${scale}) rotateX(${rotateX}deg) rotateY(${rotateY}deg) rotateZ(${rotateZ}deg)`;
         }
         creditCard.style.opacity = opacity;
 
-        // Scroll hint fades out quickly
         const scrollHint = document.getElementById('scroll-hint');
         if (scrollHint) {
-            scrollHint.style.opacity = Math.max(0, 1 - progress * 10);
+            // Use maxScrollProgress so it doesn't reappear if user scrolls back up
+            scrollHint.style.opacity = Math.max(0, 1 - maxScrollProgress * 10);
         }
     }
 
@@ -214,9 +195,6 @@
             const mouseRotX = mouseY * -5;
             const mouseRotY = mouseX * 8;
 
-            // Get the current transform and append mouse rotation
-            // Apply mouse offset to the outer wrapper so it doesn't conflict
-            // with the scroll-driven rotation on the inner element
             creditCard.style.transform = `rotateX(${mouseRotX}deg) rotateY(${mouseRotY}deg)`;
         }
 
@@ -258,6 +236,33 @@
     revealElements.forEach((el) => {
         revealObserver.observe(el);
     });
+
+    // ===== AUTO-PLAY CINEMATIC INTRO =====
+    const INTRO_DURATION = 1500; // Fast fade in, 1.5s total
+    let introStartTime = null;
+
+    function playIntroAnimation(timestamp) {
+        if (!introStartTime) introStartTime = timestamp;
+        const elapsed = timestamp - introStartTime;
+        
+        // Progress goes from 0 to 1 over INTRO_DURATION
+        const progress = Math.min(1, Math.max(0, elapsed / INTRO_DURATION));
+        
+        renderIntroFrame(progress);
+        
+        if (progress < 1) {
+            requestAnimationFrame(playIntroAnimation);
+        } else {
+            // Re-enable scrolling after animation
+            document.body.style.overflow = 'auto';
+            introFinished = true;
+            updateCardAnimation(); // Ensure first frame of scroll is ready
+        }
+    }
+
+    // Lock scrolling initially and start animation
+    document.body.style.overflow = 'hidden';
+    requestAnimationFrame(playIntroAnimation);
 
     // ===== COUNTER ANIMATION =====
     const counters = document.querySelectorAll('.counter');
@@ -405,6 +410,40 @@
     updateScrollProgress();
     updateCardAnimation();
 
+    // ===== PAGE EXIT ANIMATION TO LOGIN =====
+    const loginLinks = document.querySelectorAll('a[href="login.html"]');
+    if (loginLinks.length > 0) {
+        // Create a black overlay for the transition
+        const pageTransitionOverlay = document.createElement('div');
+        pageTransitionOverlay.style.cssText = `
+            position: fixed;
+            inset: 0;
+            background: #050507;
+            z-index: 99999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.8s cubic-bezier(0.25, 0.1, 0.25, 1);
+        `;
+        document.body.appendChild(pageTransitionOverlay);
 
+        loginLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetUrl = link.getAttribute('href');
+                
+                // Trigger the fade out
+                pageTransitionOverlay.style.pointerEvents = 'all';
+                pageTransitionOverlay.style.opacity = '1';
+                
+                // Add a subtle zoom out to the body
+                document.body.style.transition = 'transform 0.8s cubic-bezier(0.25, 0.1, 0.25, 1)';
+                document.body.style.transform = 'scale(0.95)';
+                
+                setTimeout(() => {
+                    window.location.href = targetUrl;
+                }, 800);
+            });
+        });
+    }
 
 })();
