@@ -4,6 +4,9 @@ from flask_cors import CORS
 import time
 import random
 from datetime import datetime
+import csv
+import io
+
 
 app = Flask(__name__)
 CORS(app)
@@ -230,6 +233,97 @@ def confirm_transaction():
         'status': 'success',
         'item': confirmed_tx
     })
+
+
+
+@app.route('/api/upload-statement', methods=['POST'])
+def upload_statement():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file uploaded. Please select a CSV file.'}), 400
+    
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No file selected.'}), 400
+        
+    try:
+        stream = io.StringIO(file.stream.read().decode("UTF8"), newline=None)
+        csv_input = csv.reader(stream)
+        
+        headers = next(csv_input, None)
+        if not headers:
+            return jsonify({'error': 'Empty CSV file.'}), 400
+            
+        h_lower = [h.lower().strip() for h in headers]
+        date_idx, desc_idx, amt_idx = -1, -1, -1
+        
+        for i, h in enumerate(h_lower):
+            if 'date' in h: date_idx = i
+            elif 'description' in h or 'narration' in h or 'particulars' in h: desc_idx = i
+            elif 'amount' in h or 'withdrawal' in h or 'debit' in h: amt_idx = i
+            
+        if date_idx == -1 or desc_idx == -1 or amt_idx == -1:
+            date_idx, desc_idx, amt_idx = 0, 1, 2
+            
+        new_txs = []
+        for row in csv_input:
+            if len(row) <= max(date_idx, desc_idx, amt_idx): continue
+            
+            raw_amt = row[amt_idx].replace(',', '').strip()
+            if not raw_amt: continue
+            
+            try:
+                amt_val = float(raw_amt)
+            except ValueError:
+                continue
+                
+            desc_val = row[desc_idx].strip()
+            date_val = row[date_idx].strip()
+            
+            # Format Date
+            formatted_date = datetime.now().strftime("%Y-%m-%d")
+            try:
+                if '/' in date_val:
+                    parts = date_val.split('/')
+                    if len(parts) == 3 and len(parts[2]) == 4: 
+                        formatted_date = f"{parts[2]}-{parts[1]:0>2}-{parts[0]:0>2}"
+                elif '-' in date_val:
+                    formatted_date = date_val
+            except:
+                pass
+            
+            classification = auto_classify_merchant(desc_val)
+            final_cat = 'Miscellaneous'
+            final_reason = 'Extracted from CSV'
+            final_tags = ['CSV']
+            
+            if classification:
+                final_cat = classification['category']
+                final_reason = classification['reason']
+                final_tags = classification['tags']
+                
+            tx_obj = {
+                'id': f"csv-tx-{int(time.time()*1000)}-{random.randint(0,9999)}",
+                'date': formatted_date,
+                'description': desc_val,
+                'category': final_cat,
+                'flow': 'expense' if amt_val > 0 else 'income',
+                'amount': abs(amt_val),
+                'reason': final_reason,
+                'tags': final_tags
+            }
+            new_txs.append(tx_obj)
+            
+        if len(new_txs) > 0:
+            for t in new_txs:
+                transactions.insert(0, t)
+                
+        return jsonify({
+            'status': 'success',
+            'transactions_pulled': len(new_txs),
+            'months_covered': 1
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(port=8000, debug=True)

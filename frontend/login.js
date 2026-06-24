@@ -216,7 +216,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Redirect
             setTimeout(() => {
-                window.location.href = 'index.html';
+                window.location.href = 'link-upi.html';
             }, 3000);
         }, 1100);
     }

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Link — ManMo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="link-upi.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div class="page-entry-overlay"></div>
+
+    <div class="page-container">
+        <header class="nav-header">
+            <a href="index.html" class="logo">
+                <div class="logo-icon">$</div>
+                <span>ManMo</span>
+            </a>
+            <a href="index.html" style="color: var(--text-secondary); text-decoration: none; font-size: 0.9rem; font-weight: 500;">Cancel</a>
+        </header>
+
+        <div class="wizard-card" id="drop-area">
+            <div class="dropzone-overlay" id="drop-overlay">
+                <span class="drop-text">Drop file into the vault</span>
+            </div>
+
+            <h1 class="step-title" id="main-title">Secure Upload</h1>
+            <p class="step-subtitle" id="main-subtitle">Drag & drop your CSV bank statement into the vault.</p>
+
+            <div class="vault-container">
+                <div class="vault-frame">
+                    <div class="vault-interior" id="vault-interior">
+                        <i data-lucide="database" style="color: #fff; width: 32px; height: 32px; opacity: 0.5; margin-bottom: 8px;"></i>
+                        <span style="font-size: 0.8rem; font-weight: 600; color: #9ca3af;">MATRIX CORE</span>
+                    </div>
+                    
+                    <div class="vault-door" id="vault-door">
+                        <div class="vault-wheel">
+                            <div class="vault-spoke"></div>
+                            <div class="vault-spoke"></div>
+                            <div class="vault-spoke"></div>
+                            <div class="vault-spoke"></div>
+                            <div class="vault-handle-center"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="file-btn-wrapper" id="action-wrapper">
+                <input type="file" id="file-input" accept=".csv" style="display: none;">
+                <button class="btn-upload" id="btn-browse" onclick="document.getElementById('file-input').click()">
+                    <i data-lucide="upload" style="width: 18px; height: 18px;"></i> Select File
+                </button>
+            </div>
+
+            <div class="progress-state" id="progress-state">
+                <div class="progress-item">
+                    <div class="progress-icon done" id="icon-step1"><i data-lucide="check" style="width: 14px; height: 14px;"></i></div>
+                    <span class="progress-text" id="text-step1">Vault secured</span>
+                </div>
+                <div class="progress-item">
+                    <div class="progress-icon loading" id="icon-step2"><i data-lucide="loader-2" style="width: 14px; height: 14px;"></i></div>
+                    <span class="progress-text" id="text-step2">Parsing transactions...</span>
+                </div>
+                <div class="progress-item">
+                    <div class="progress-icon" id="icon-step3"><i data-lucide="circle" style="width: 14px; height: 14px;"></i></div>
+                    <span class="progress-text" id="text-step3">Awaiting matrix</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="page-flash" id="page-flash"></div>
+    <script src="link-upi.js"></script>
+</body>
+</html>
