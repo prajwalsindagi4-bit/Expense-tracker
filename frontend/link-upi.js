@@ -2,16 +2,45 @@ document.addEventListener('DOMContentLoaded', () => {
     lucide.createIcons();
 
     const dropArea = document.getElementById('drop-area');
-    const dropOverlay = document.getElementById('drop-overlay');
+    const dropzone = document.getElementById('main-dropzone');
     const fileInput = document.getElementById('file-input');
-    
-    const vaultDoor = document.getElementById('vault-door');
-    const vaultInterior = document.getElementById('vault-interior');
-    
     const mainTitle = document.getElementById('main-title');
     const mainSubtitle = document.getElementById('main-subtitle');
     const actionWrapper = document.getElementById('action-wrapper');
     const progressState = document.getElementById('progress-state');
+    
+    // 3D Tilt Effect
+    dropArea.addEventListener('mousemove', (e) => {
+        const rect = dropArea.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+        const rotateX = ((y - centerY) / centerY) * -5;
+        const rotateY = ((x - centerX) / centerX) * 5;
+        dropArea.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+    });
+    dropArea.addEventListener('mouseleave', () => {
+        dropArea.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+    });
+
+    // Ambient Particles
+    const particleContainer = document.getElementById('particle-container');
+    if (particleContainer) {
+        const colors = ['purple', 'cyan'];
+        for(let i=0; i<40; i++) {
+            const p = document.createElement('div');
+            const colorClass = colors[Math.floor(Math.random() * colors.length)];
+            p.className = `particle ${colorClass}`;
+            p.style.width = Math.random() * 3 + 'px';
+            p.style.height = p.style.width;
+            p.style.left = Math.random() * 100 + 'vw';
+            p.style.top = Math.random() * 100 + 'vh';
+            p.style.animationDuration = (Math.random() * 15 + 10) + 's';
+            p.style.animationDelay = (Math.random() * 5) + 's';
+            particleContainer.appendChild(p);
+        }
+    }
     
     let isProcessing = false;
 
@@ -28,13 +57,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Highlight dropzone
     ['dragenter', 'dragover'].forEach(eventName => {
         document.body.addEventListener(eventName, () => {
-            if (!isProcessing) dropOverlay.classList.add('active');
+            if (!isProcessing) dropzone.classList.add('active');
         }, false);
     });
 
     ['dragleave', 'drop'].forEach(eventName => {
         document.body.addEventListener(eventName, () => {
-            dropOverlay.classList.remove('active');
+            dropzone.classList.remove('active');
         }, false);
     });
 
@@ -52,6 +81,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (file) handleFile(file);
     });
 
+    // Handle Skip
+    document.getElementById('btn-skip').addEventListener('click', () => {
+        if (isProcessing) return;
+        localStorage.setItem('hasDataUploaded', 'false');
+        document.getElementById('page-flash').classList.add('active');
+        setTimeout(() => {
+            window.location.href = 'index.html';
+        }, 300);
+    });
+
     function handleFile(file) {
         if (!file.name.toLowerCase().endsWith('.csv')) {
             alert('Please upload a valid CSV file.');
@@ -64,29 +103,11 @@ document.addEventListener('DOMContentLoaded', () => {
         actionWrapper.style.display = 'none';
         mainTitle.textContent = "Processing File";
         mainSubtitle.textContent = file.name;
-
-        // Sequence Step 1: Spin vault wheel to unlock
-        vaultDoor.classList.add('unlocking');
-
-        setTimeout(() => {
-            // Sequence Step 2: Open vault door
-            vaultDoor.classList.remove('unlocking');
-            vaultDoor.classList.add('open');
-            vaultInterior.classList.add('open');
-
-            // Wait a moment for visual effect of file going in (simulated by timeout)
-            setTimeout(() => {
-                // Sequence Step 3: Close vault door
-                vaultDoor.classList.remove('open');
-                vaultInterior.classList.remove('open');
-
-                setTimeout(() => {
-                    // Sequence Step 4: Show progress UI
-                    progressState.classList.add('active');
-                    simulateParsing();
-                }, 1000); // Wait for door to close
-            }, 1500); // Time door stays open
-        }, 1000); // Time wheel spins
+        // Hide dropzone, show progress
+        document.getElementById('main-dropzone').style.display = 'none';
+        
+        progressState.classList.add('active');
+        simulateParsing();
     }
 
     function simulateParsing() {
@@ -118,13 +139,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 lucide.createIcons();
 
                 mainTitle.textContent = "Success";
-                mainTitle.style.color = "var(--success)";
+                mainTitle.style.color = "#38bdf8";
                 mainSubtitle.textContent = "Your financial data is secured.";
 
                 // Exit flash
                 setTimeout(() => {
                     document.getElementById('page-flash').classList.add('active');
                     setTimeout(() => {
+                        localStorage.setItem('hasDataUploaded', 'true');
                         window.location.href = 'index.html';
                     }, 300);
                 }, 1000);

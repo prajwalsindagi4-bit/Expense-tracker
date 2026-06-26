@@ -5,10 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Secure Link — ManMo</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="link-upi.css">
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
+    <!-- 3D Floating Orb Decorations -->
+    <div class="orb-container" aria-hidden="true">
+        <div class="floating-orb orb-1"></div>
+        <div class="floating-orb orb-2"></div>
+        <div class="floating-orb orb-3"></div>
+    </div>
+
+    <!-- 3D Perspective Grid Floor -->
+    <div class="grid-floor-container" aria-hidden="true">
+        <div class="grid-floor"></div>
+    </div>
+
+    <!-- Ambient Particle System -->
+    <div class="particle-container" id="particle-container" aria-hidden="true"></div>
+
     <div class="page-entry-overlay"></div>
 
     <div class="page-container">
@@ -20,37 +36,26 @@
             <a href="index.html" style="color: var(--text-secondary); text-decoration: none; font-size: 0.9rem; font-weight: 500;">Cancel</a>
         </header>
 
-        <div class="wizard-card" id="drop-area">
-            <div class="dropzone-overlay" id="drop-overlay">
-                <span class="drop-text">Drop file into the vault</span>
-            </div>
+        <div class="card glass-panel" id="drop-area" style="width: 500px; padding: 3rem; text-align: center; position: relative; z-index: 10; margin: auto;">
 
-            <h1 class="step-title" id="main-title">Secure Upload</h1>
-            <p class="step-subtitle" id="main-subtitle">Drag & drop your CSV bank statement into the vault.</p>
+            <h1 class="step-title text-gradient-two-tone" id="main-title">Data Synchronization</h1>
+            <p class="step-subtitle" id="main-subtitle">Upload your bank statement to populate the dashboard.</p>
 
-            <div class="vault-container">
-                <div class="vault-frame">
-                    <div class="vault-interior" id="vault-interior">
-                        <i data-lucide="database" style="color: #fff; width: 32px; height: 32px; opacity: 0.5; margin-bottom: 8px;"></i>
-                        <span style="font-size: 0.8rem; font-weight: 600; color: #9ca3af;">MATRIX CORE</span>
-                    </div>
-                    
-                    <div class="vault-door" id="vault-door">
-                        <div class="vault-wheel">
-                            <div class="vault-spoke"></div>
-                            <div class="vault-spoke"></div>
-                            <div class="vault-spoke"></div>
-                            <div class="vault-spoke"></div>
-                            <div class="vault-handle-center"></div>
-                        </div>
-                    </div>
+            <div class="upload-dropzone" id="main-dropzone">
+                <div class="dropzone-content">
+                    <i data-lucide="file-up" style="width: 48px; height: 48px; color: #ffffff; margin-bottom: 1rem; filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.4));"></i>
+                    <h3 style="font-weight: 600; font-size: 1.1rem; margin-bottom: 0.5rem; color: #fff;">Drag & Drop your CSV</h3>
+                    <p style="font-size: 0.85rem; color: var(--text-muted);">or click below to browse</p>
                 </div>
             </div>
 
             <div class="file-btn-wrapper" id="action-wrapper">
                 <input type="file" id="file-input" accept=".csv" style="display: none;">
-                <button class="btn-upload" id="btn-browse" onclick="document.getElementById('file-input').click()">
+                <button class="btn" id="btn-browse" onclick="document.getElementById('file-input').click()" style="background: #ffffff; color: #000000; border: none; padding: 14px 28px; border-radius: 12px; font-size: 1rem; font-weight: 600; cursor: pointer; box-shadow: 0 4px 15px rgba(255, 255, 255, 0.2); display: inline-flex; align-items: center; gap: 8px; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 6px 20px rgba(255, 255, 255, 0.3)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 4px 15px rgba(255, 255, 255, 0.2)'">
                     <i data-lucide="upload" style="width: 18px; height: 18px;"></i> Select File
+                </button>
+                <button class="btn" id="btn-skip" style="margin-top: 15px; background: transparent; border: 1px solid rgba(255, 255, 255, 0.1); color: #9ca3af; padding: 14px 28px; border-radius: 12px; font-weight: 500; font-size: 1rem; cursor: pointer; transition: all 0.3s; display: block; width: fit-content; margin-left: auto; margin-right: auto;" onmouseover="this.style.borderColor='rgba(255, 255, 255, 0.4)'; this.style.color='#ffffff'; this.style.boxShadow='0 0 15px rgba(255, 255, 255, 0.1)'" onmouseout="this.style.borderColor='rgba(255, 255, 255, 0.1)'; this.style.color='#9ca3af'; this.style.boxShadow='none'">
+                    Skip for now
                 </button>
             </div>
 

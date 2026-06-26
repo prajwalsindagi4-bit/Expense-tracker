@@ -8,6 +8,12 @@ const API_BASE = window.location.hostname === 'localhost' || window.location.hos
     : '/api';
 
 async function fetchInitialData() {
+    if (localStorage.getItem('hasDataUploaded') === 'false') {
+        transactions = [];
+        pendingConfirmations = [];
+        return true;
+    }
+
     try {
         const response = await fetch(`${API_BASE}/transactions`);
         const data = await response.json();

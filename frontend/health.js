@@ -1,6 +1,18 @@
 // Manmo AI — Financial Health Score Calculator
 
 function calculateFinancialHealth(txs) {
+    if (!txs || txs.length === 0) {
+        return {
+            overall: 0,
+            message: 'Awaiting Data',
+            factors: [
+                { name: 'Investment Ratio', score: 0 },
+                { name: 'Savings Margin', score: 0 },
+                { name: 'Discretionary Control', score: 0 },
+                { name: 'Emergency Reserve', score: 0 }
+            ]
+        };
+    }
     // We base health on last 3 months of activity to ensure accuracy and relevance
     const now = new Date();
     const threeMonthsAgo = new Date();

@@ -106,6 +106,22 @@ function initApp() {
         renderSpendings();
     });
 
+    // 9. Settings Data Sync
+    const btnSyncData = document.getElementById('btn-sync-data');
+    if (btnSyncData) {
+        btnSyncData.addEventListener('click', () => {
+            const btn = btnSyncData;
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<i data-lucide="loader-2" style="width:16px; height:16px; display:inline-block; vertical-align:middle; margin-right:6px;" class="spin"></i> Syncing...';
+            lucide.createIcons();
+            
+            setTimeout(() => {
+                localStorage.setItem('hasDataUploaded', 'true');
+                window.location.reload();
+            }, 1000);
+        });
+    }
+
     // Initial render
     updateDashboardUI();
     renderOpportunitiesAndSpots();
@@ -113,39 +129,59 @@ function initApp() {
     runSandboxSimulation();
 }
 
-// Tab switcher route control
+// Tab switcher route control — Premium transition
 function switchTab(tabId) {
     const sections = document.querySelectorAll('.page-section');
     const navItems = document.querySelectorAll('.nav-item');
+    const mainContent = document.getElementById('main-content');
     
-    // Reset reveal animations on all sections so they replay on re-entry
-    sections.forEach(sec => {
-        sec.classList.remove('active');
-        sec.querySelectorAll('.reveal, .reveal-left, .reveal-scale').forEach(el => {
-            el.classList.remove('visible');
-        });
-    });
-    navItems.forEach(item => item.classList.remove('active'));
-
-    // Scroll to top smoothly
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-
-    document.getElementById(tabId).classList.add('active');
-    const activeNav = Array.from(navItems).find(item => item.getAttribute('data-target') === tabId);
-    if (activeNav) activeNav.classList.add('active');
-
-    // Trigger chart refreshes or canvas resets if needed
-    if (tabId === 'dashboard') {
-        updateDashboardUI();
-    } else if (tabId === 'transactions') {
-        renderLedger();
-    } else if (tabId === 'spendings') {
-        renderSpendings();
-    } else if (tabId === 'sandbox') {
-        runSandboxSimulation();
-    } else if (tabId === 'split-expenses') {
-        checkPendingConfirmationsInbox();
+    // Premium exit animation on current active section
+    const currentActive = document.querySelector('.page-section.active');
+    if (currentActive && currentActive.id !== tabId) {
+        currentActive.style.opacity = '0';
+        currentActive.style.transform = 'translateY(-15px) scale(0.98)';
+        currentActive.style.filter = 'blur(4px)';
+        currentActive.style.transition = 'all 0.25s ease-out';
     }
+
+    // Wait for exit animation, then switch
+    setTimeout(() => {
+        // Reset reveal animations on all sections so they replay on re-entry
+        sections.forEach(sec => {
+            sec.classList.remove('active');
+            sec.style.opacity = '';
+            sec.style.transform = '';
+            sec.style.filter = '';
+            sec.style.transition = '';
+            sec.querySelectorAll('.reveal, .reveal-left, .reveal-scale').forEach(el => {
+                el.classList.remove('visible');
+            });
+        });
+        navItems.forEach(item => item.classList.remove('active'));
+
+        // Scroll to top smoothly
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        document.getElementById(tabId).classList.add('active');
+        const activeNav = Array.from(navItems).find(item => item.getAttribute('data-target') === tabId);
+        if (activeNav) activeNav.classList.add('active');
+
+        // Trigger chart refreshes or canvas resets if needed
+        if (tabId === 'dashboard') {
+            updateDashboardUI();
+        } else if (tabId === 'transactions') {
+            renderLedger();
+        } else if (tabId === 'spendings') {
+            renderSpendings();
+        } else if (tabId === 'sandbox') {
+            runSandboxSimulation();
+        } else if (tabId === 'split-expenses') {
+            checkPendingConfirmationsInbox();
+        }
+
+        // Re-initialize 3D tilt for cards in the new section
+        setTimeout(() => init3DCardTilt(), 200);
+    }, currentActive && currentActive.id !== tabId ? 200 : 0);
 }
 
 // Update primary dashboard containers
@@ -197,13 +233,19 @@ function updateDashboardUI() {
 
     const savingsRate = Math.round(((incomeThisMonth - spentThisMonth) / incomeThisMonth) * 100);
 
-    document.getElementById('stat-networth').innerText = `$${(42650 + (incomeThisMonth - spentThisMonth)).toLocaleString()}`;
-    document.getElementById('stat-spent').innerText = `$${spentThisMonth.toLocaleString()}`;
-    document.getElementById('stat-invested').innerText = `$${investedThisMonth.toLocaleString()}`;
-    document.getElementById('stat-savingsrate').innerText = `${Math.max(0, savingsRate)}%`;
+    // Animate stat values with counting effect
+    animateStatValue('stat-networth', 42650 + (incomeThisMonth - spentThisMonth), '$', true);
+    animateStatValue('stat-spent', spentThisMonth, '$', true);
+    animateStatValue('stat-invested', investedThisMonth, '$', true);
+    animateStatValue('stat-savingsrate', Math.max(0, savingsRate), '', false, '%');
 
     // 3. AI Financial Story
-    const narrativeText = generateFinancialStory(transactions);
+    let narrativeText = "";
+    if (transactions.length === 0) {
+        narrativeText = "<h3>Awaiting Data Integration</h3><p>Upload your bank statements in the Settings tab to let ManMo generate personalized insights and track your wealth journey.</p>";
+    } else {
+        narrativeText = generateFinancialStory(transactions);
+    }
     document.getElementById('story-narrative-container').innerHTML = narrativeText;
 
     // Refresh icons inside dynamic content
@@ -211,6 +253,9 @@ function updateDashboardUI() {
 
     // 4. Render charts
     initDashboardCharts(thisMonthTxs);
+
+    // Re-initialize 3D tilt for new cards
+    setTimeout(() => init3DCardTilt(), 300);
 }
 
 // Chart.js visualizations
@@ -225,7 +270,9 @@ function initDashboardCharts(thisMonthTxs) {
             labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
             datasets: [{
                 label: 'Net Worth Assets',
-                data: [38000, 39200, 40500, 41200, 42100, 42650],
+                data: localStorage.getItem('hasDataUploaded') === 'false' 
+                    ? [0, 0, 0, 0, 0, 0] 
+                    : [38000, 39200, 40500, 41200, 42100, 42650],
                 borderColor: '#7c5cfc',
                 backgroundColor: 'rgba(124, 92, 252, 0.06)',
                 borderWidth: 2,
@@ -903,13 +950,23 @@ function initScrollReveal() {
 
     // ── NAVBAR SCROLL EFFECT ──
     initNavbarScroll();
+
+    // ── NEW 3D SYSTEMS ──
+    init3DFlipCards();
+    initAmbientParticles();
+    initDepthOfField();
+    initFloatingElements();
 }
 
-// ──────── 3D CARD TILT ON MOUSE HOVER ────────
+// ──────── 3D CARD TILT ON MOUSE HOVER — PREMIUM ────────
 function init3DCardTilt() {
     const cards = document.querySelectorAll('.card');
 
     cards.forEach(card => {
+        // Avoid duplicate listeners by checking a flag
+        if (card._tiltInit) return;
+        card._tiltInit = true;
+
         card.addEventListener('mousemove', (e) => {
             const rect = card.getBoundingClientRect();
             const x = e.clientX - rect.left;
@@ -921,13 +978,19 @@ function init3DCardTilt() {
             const tiltX = ((y - centerY) / centerY) * -2.5;
             const tiltY = ((x - centerX) / centerX) * 2.5;
 
-            card.style.transform = `perspective(800px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) translateZ(8px) translateY(-4px)`;
+            card.style.transform = `perspective(800px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) translateZ(10px) translateY(-4px)`;
             card.style.transition = 'transform 0.1s linear';
+
+            // Move the glass reflection to follow cursor
+            const percentX = (x / rect.width) * 100;
+            const percentY = (y / rect.height) * 100;
+            card.style.background = `radial-gradient(circle at ${percentX}% ${percentY}%, rgba(255,255,255,0.06), rgba(255,255,255,0.025) 50%)`;
         });
 
         card.addEventListener('mouseleave', () => {
             card.style.transform = '';
-            card.style.transition = 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)';
+            card.style.transition = 'all 0.5s cubic-bezier(0.16, 1, 0.3, 1)';
+            card.style.background = '';
         });
     });
 }
@@ -948,8 +1011,8 @@ function initCursorGlow() {
 
     // Smooth animation loop for glow following
     function animateGlow() {
-        glowX += (targetX - glowX) * 0.08;
-        glowY += (targetY - glowY) * 0.08;
+        glowX += (targetX - glowX) * 0.4;
+        glowY += (targetY - glowY) * 0.4;
         glow.style.left = glowX + 'px';
         glow.style.top = glowY + 'px';
         requestAnimationFrame(animateGlow);
@@ -961,10 +1024,26 @@ function initCursorGlow() {
 function initParallaxScroll() {
     let ticking = false;
 
+    // Apply parallax scene class to main content
+    const mainContent = document.getElementById('main-content');
+    if (mainContent) {
+        mainContent.classList.add('parallax-scene');
+    }
+
     function onScroll() {
         if (!ticking) {
             requestAnimationFrame(() => {
                 const scrollY = window.scrollY;
+
+                // Deep Parallax - Background Layer (Grid, Particles)
+                document.querySelectorAll('.grid-floor-container, .particle-container').forEach(el => {
+                    el.style.transform = `translateY(${scrollY * 0.15}px)`;
+                });
+
+                // Deep Parallax - Midground Layer (Floating 3D Elements)
+                document.querySelectorAll('.floating-3d-elements').forEach(el => {
+                    el.style.transform = `translateY(${scrollY * 0.08}px)`;
+                });
 
                 // Parallax the hero text
                 document.querySelectorAll('.page-hero-text').forEach(el => {
@@ -1013,7 +1092,7 @@ function initNavbarScroll() {
         const currentScroll = window.scrollY;
 
         if (currentScroll > 100) {
-            navbar.style.background = 'rgba(5, 5, 7, 0.92)';
+            navbar.style.background = 'rgba(5, 5, 7, 0.95)';
             navbar.style.boxShadow = '0 4px 40px rgba(0, 0, 0, 0.7)';
         } else {
             navbar.style.background = 'rgba(8, 8, 12, 0.75)';
@@ -1024,3 +1103,174 @@ function initNavbarScroll() {
     }, { passive: true });
 }
 
+// ──────── ANIMATED NUMBER COUNTING ────────
+function animateStatValue(elementId, targetValue, prefix = '', useCommas = false, suffix = '') {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+
+    const duration = 1200;
+    const startTime = performance.now();
+    const startValue = 0;
+
+    // Add pop animation class
+    el.classList.add('counting');
+    setTimeout(() => el.classList.remove('counting'), 700);
+
+    function easeOutExpo(t) {
+        return t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+    }
+
+    function updateCounter(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const easedProgress = easeOutExpo(progress);
+        const currentValue = startValue + (targetValue - startValue) * easedProgress;
+
+        if (useCommas) {
+            el.innerText = `${prefix}${Math.round(currentValue).toLocaleString()}${suffix}`;
+        } else {
+            el.innerText = `${prefix}${Math.round(currentValue)}${suffix}`;
+        }
+
+        if (progress < 1) {
+            requestAnimationFrame(updateCounter);
+        } else {
+            // Final value with proper formatting
+            if (useCommas) {
+                el.innerText = `${prefix}${targetValue.toLocaleString()}${suffix}`;
+            } else {
+                el.innerText = `${prefix}${targetValue}${suffix}`;
+            }
+        }
+    }
+
+    requestAnimationFrame(updateCounter);
+}
+
+// ──────── 3D FLIP CARDS ────────
+function init3DFlipCards() {
+    const flipCards = document.querySelectorAll('.flip-card-3d');
+    flipCards.forEach(card => {
+        // Prevent multiple click bindings on re-init
+        if (card._flipInit) return;
+        card._flipInit = true;
+        
+        card.addEventListener('click', () => {
+            card.classList.toggle('flipped');
+        });
+    });
+}
+
+// ──────── AMBIENT PARTICLE SYSTEM ────────
+function initAmbientParticles() {
+    const container = document.getElementById('particle-container');
+    if (!container || container.children.length > 0) return; // Prevent duplicate generation
+
+    const particleCount = 40;
+    
+    for (let i = 0; i < particleCount; i++) {
+        createParticle(container);
+    }
+}
+
+function createParticle(container) {
+    const particle = document.createElement('div');
+    particle.className = 'particle' + (Math.random() > 0.8 ? ' large' : '');
+    
+    // Random start positions
+    const startX = Math.random() * 100;
+    const startY = Math.random() * 100;
+    
+    // Random drift targets
+    const driftX = (Math.random() - 0.5) * 400 + 'px';
+    const driftY = (Math.random() - 0.5) * 400 - 400 + 'px'; // Tend to drift up
+    const driftZ = (Math.random() - 0.5) * 200 + 'px';
+    
+    particle.style.left = startX + 'vw';
+    particle.style.top = startY + 'vh';
+    
+    particle.style.setProperty('--drift-x', driftX);
+    particle.style.setProperty('--drift-y', driftY);
+    particle.style.setProperty('--drift-z', driftZ);
+    
+    // Random timing
+    const duration = 10 + Math.random() * 20; // 10s to 30s
+    const delay = Math.random() * 10;
+    
+    particle.style.animationDuration = duration + 's';
+    particle.style.animationDelay = delay + 's';
+    
+    container.appendChild(particle);
+
+    // Recreate particle when it finishes
+    particle.addEventListener('animationend', () => {
+        particle.remove();
+        createParticle(container);
+    });
+}
+
+// ──────── DEPTH OF FIELD BLUR ────────
+function initDepthOfField() {
+    let ticking = false;
+    
+    // Initialize layers
+    document.querySelectorAll('.card, .page-title, .subtitle').forEach(el => {
+        el.classList.add('dof-layer');
+    });
+
+    function onScroll() {
+        if (!ticking) {
+            requestAnimationFrame(() => {
+                const viewportCenter = window.innerHeight / 2;
+                const maxDistance = window.innerHeight * 1.2; // Distance for max blur
+
+                document.querySelectorAll('.dof-layer').forEach(el => {
+                    const rect = el.getBoundingClientRect();
+                    const elCenter = rect.top + rect.height / 2;
+                    const distance = Math.abs(elCenter - viewportCenter);
+                    
+                    // Remove all classes first
+                    el.classList.remove('dof-near', 'dof-mid', 'dof-far');
+                    
+                    // Assign class based on distance from center
+                    if (distance < maxDistance * 0.3) {
+                        el.classList.add('dof-near');
+                    } else if (distance < maxDistance * 0.6) {
+                        el.classList.add('dof-mid');
+                    } else {
+                        el.classList.add('dof-far');
+                    }
+                });
+
+                ticking = false;
+            });
+            ticking = true;
+        }
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    // Trigger once on load
+    onScroll();
+}
+
+// ──────── FLOATING ELEMENT MOUSE REACTIVITY ────────
+function initFloatingElements() {
+    const elements = document.querySelectorAll('.float-element');
+    
+    document.addEventListener('mousemove', (e) => {
+        const mouseX = e.clientX / window.innerWidth - 0.5;
+        const mouseY = e.clientY / window.innerHeight - 0.5;
+        
+        elements.forEach((el, index) => {
+            // Different elements react with different intensity
+            const intensity = (index % 3 + 1) * 30;
+            const shiftX = mouseX * intensity;
+            const shiftY = mouseY * intensity;
+            
+            // We use margin to shift them so it doesn't interfere with their CSS transform animation
+            el.style.marginLeft = `${shiftX}px`;
+            el.style.marginTop = `${shiftY}px`;
+            el.style.transition = 'margin 0.5s cubic-bezier(0.25, 0.1, 0.25, 1)';
+        });
+    });
+}
