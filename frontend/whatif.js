@@ -2,10 +2,10 @@
 
 function calculateWhatIfProjections(params) {
     // Inputs:
-    // params.addInvest - monthly investment top-up amount ($0 to $1000)
+    // params.addInvest - monthly investment top-up amount (₹0 to ₹1000)
     // params.reduceFoodPct - percentage reduction of food splits (0% to 80%)
     // params.investBonusPct - annual bonus investment percentage (0% to 100%)
-    // params.extraDebtPay - extra monthly debt prepayment ($0 to $300)
+    // params.extraDebtPay - extra monthly debt prepayment (₹0 to ₹300)
 
     const years = 15;
     const months = years * 12;
@@ -20,7 +20,7 @@ function calculateWhatIfProjections(params) {
     const baselineCheckingSurplus = 1400; // Leftover cash flow
     const annualBonus = 5000;
 
-    // Debt parameters (Mock student loan/car loan of $12,000 at 6% interest rate)
+    // Debt parameters (Mock student loan/car loan of ₹12,000 at 6% interest rate)
     let baselineDebtPrincipal = 12000;
     let hypotheticalDebtPrincipal = 12000;
     const debtInterestRate = 0.06 / 12;
@@ -119,8 +119,8 @@ function calculateWhatIfProjections(params) {
     // Summarize outcomes
     let summaryText = "";
     if (netDifference > 0) {
-        summaryText += `By adjusting these sliders, in 15 years your projected Net Worth increases to <strong>$${finalHypoNW.toLocaleString()}</strong>, compared to $${finalBaseNW.toLocaleString()} in your baseline. `;
-        summaryText += `That represents an additional <strong>$${netDifference.toLocaleString()}</strong> in wealth generated solely by optimizing existing funds. `;
+        summaryText += `By adjusting these sliders, in 15 years your projected Net Worth increases to <strong>₹${finalHypoNW.toLocaleString()}</strong>, compared to ₹${finalBaseNW.toLocaleString()} in your baseline. `;
+        summaryText += `That represents an additional <strong>₹${netDifference.toLocaleString()}</strong> in wealth generated solely by optimizing existing funds. `;
     } else {
         summaryText += "Adjust the sliders to simulate compounding allocations and check outcomes. ";
     }
@@ -128,7 +128,7 @@ function calculateWhatIfProjections(params) {
     if (params.extraDebtPay > 0 && hypoDebtFreeMonth < baseDebtFreeMonth) {
         const monthsEarlier = baseDebtFreeMonth - hypoDebtFreeMonth;
         const interestSaved = baseTotalInterestPaid - hypoTotalInterestPaid;
-        summaryText += `<br><br><span style="color:var(--success); font-weight:600;"><i data-lucide="shield"></i> Debt Payoff:</span> By adding $${params.extraDebtPay}/month, you become debt-free <strong>${monthsEarlier} months earlier</strong>, saving <strong>$${Math.round(interestSaved).toLocaleString()}</strong> in direct interest payments.`;
+        summaryText += `<br><br><span style="color:var(--success); font-weight:600;"><i data-lucide="shield"></i> Debt Payoff:</span> By adding ₹${params.extraDebtPay}/month, you become debt-free <strong>${monthsEarlier} months earlier</strong>, saving <strong>₹${Math.round(interestSaved).toLocaleString()}</strong> in direct interest payments.`;
     }
 
     return {

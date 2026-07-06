@@ -174,7 +174,7 @@ function switchTab(tabId) {
         } else if (tabId === 'spendings') {
             renderSpendings();
         } else if (tabId === 'sandbox') {
-            runSandboxSimulation();
+            renderBudgetComparison();
         } else if (tabId === 'split-expenses') {
             checkPendingConfirmationsInbox();
         }
@@ -234,9 +234,9 @@ function updateDashboardUI() {
     const savingsRate = Math.round(((incomeThisMonth - spentThisMonth) / incomeThisMonth) * 100);
 
     // Animate stat values with counting effect
-    animateStatValue('stat-networth', 42650 + (incomeThisMonth - spentThisMonth), '$', true);
-    animateStatValue('stat-spent', spentThisMonth, '$', true);
-    animateStatValue('stat-invested', investedThisMonth, '$', true);
+    animateStatValue('stat-networth', 42650 + (incomeThisMonth - spentThisMonth), '₹', true);
+    animateStatValue('stat-spent', spentThisMonth, '₹', true);
+    animateStatValue('stat-invested', investedThisMonth, '₹', true);
     animateStatValue('stat-savingsrate', Math.max(0, savingsRate), '', false, '%');
 
     // 3. AI Financial Story
@@ -293,50 +293,222 @@ function initDashboardCharts(thisMonthTxs) {
             }
         }
     });
+}
+// Budget Planner — standalone function for the Budget tab
+// Default budget categories with their transaction category mappings
+let budgetCategories = [
+    { name: 'Needs', pct: 50, txCategories: ['Rent', 'Bills', 'Utilities', 'Grocery'], flow: 'expense' },
+    { name: 'Wants', pct: 30, txCategories: ['Food', 'Travel', 'Shopping'], flow: 'expense' },
+    { name: 'Savings & Investments', pct: 20, txCategories: ['Investments'], flow: 'investment' },
+];
 
-    // B. Category Outflow structure doughnut chart
-    const outflowCtx = document.getElementById('outflowChart').getContext('2d');
-    if (outflowChartInstance) outflowChartInstance.destroy();
-
-    // Sum category slices
-    const categories = ['Food', 'Travel', 'Shopping', 'Rent', 'Bills', 'Utilities'];
-    const sums = categories.map(cat => {
-        return thisMonthTxs.filter(t => t.category === cat && t.flow === 'expense')
-                           .reduce((s, t) => s + parseFloat(t.amount), 0);
-    });
-
-    const hasData = sums.reduce((a, b) => a + b, 0) > 0;
+function renderBudgetComparison() {
+    const allTxs = transactions;
+    const defaultIncome = allTxs.filter(t => t.flow === 'income').reduce((sum, t) => sum + parseFloat(t.amount), 0) || 4500;
     
-    outflowChartInstance = new Chart(outflowCtx, {
-        type: 'doughnut',
-        data: {
-            labels: hasData ? categories : ['No outflows this month'],
-            datasets: [{
-                data: hasData ? sums : [1],
-                backgroundColor: hasData ? [
-                    '#f87171', // Red (Food)
-                    '#38bdf8', // Blue (Travel)
-                    '#fbbf24', // Amber (Shopping)
-                    '#7c5cfc', // Purple (Rent)
-                    '#c084fc', // Lavender (Bills)
-                    '#34d399'  // Green (Utilities)
-                ] : ['rgba(255, 255, 255, 0.03)'],
-                borderWidth: 0,
-                hoverOffset: 8
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'right',
-                    labels: { color: '#ffffff', font: { family: 'Inter', size: 10 }, padding: 10, usePointStyle: true, pointStyleWidth: 8 }
-                }
-            },
-            cutout: '65%'
+    const budgetInput = document.getElementById('custom-budget-total');
+    if (budgetInput && budgetInput.value == 4500) {
+        budgetInput.value = defaultIncome;
+    }
+
+    // Render category rows
+    const renderCategoryRows = () => {
+        const list = document.getElementById('budget-categories-list');
+        if (!list) return;
+        list.innerHTML = '';
+
+        budgetCategories.forEach((cat, idx) => {
+            const row = document.createElement('div');
+            row.style.cssText = 'display: flex; gap: 0.75rem; align-items: center; padding: 0.5rem 0.75rem; background: rgba(255,255,255,0.02); border-radius: 6px; border: 1px solid rgba(255,255,255,0.05);';
+            row.innerHTML = `
+                <input type="text" value="${cat.name}" data-idx="${idx}" class="budget-cat-name" style="flex: 1; padding: 0.4rem 0.6rem; font-size: 0.9rem; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 4px; min-width: 120px;">
+                <div style="display: flex; align-items: center; gap: 0.25rem;">
+                    <input type="number" value="${cat.pct}" data-idx="${idx}" class="budget-cat-pct" style="width: 65px; padding: 0.4rem 0.5rem; font-size: 0.9rem; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 4px; text-align: center;" min="0" max="100">
+                    <span style="color: var(--text-muted); font-size: 0.85rem;">%</span>
+                </div>
+                <button class="budget-cat-remove" data-idx="${idx}" style="background: none; border: 1px solid rgba(239,68,68,0.3); color: var(--danger); padding: 0.3rem 0.5rem; border-radius: 4px; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center;" title="Remove">
+                    <i data-lucide="x" style="width: 14px; height: 14px;"></i>
+                </button>
+            `;
+            list.appendChild(row);
+        });
+
+        // Attach live percentage change listeners
+        list.querySelectorAll('.budget-cat-pct').forEach(input => {
+            input.addEventListener('input', (e) => {
+                const idx = parseInt(e.target.dataset.idx);
+                budgetCategories[idx].pct = parseFloat(e.target.value) || 0;
+                updatePctIndicator();
+            });
+        });
+
+        // Attach name change listeners
+        list.querySelectorAll('.budget-cat-name').forEach(input => {
+            input.addEventListener('input', (e) => {
+                const idx = parseInt(e.target.dataset.idx);
+                budgetCategories[idx].name = e.target.value;
+            });
+        });
+
+        // Attach remove listeners
+        list.querySelectorAll('.budget-cat-remove').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const idx = parseInt(e.currentTarget.dataset.idx);
+                budgetCategories.splice(idx, 1);
+                renderCategoryRows();
+                updatePctIndicator();
+            });
+        });
+
+        lucide.createIcons();
+    };
+
+    const updatePctIndicator = () => {
+        const sum = budgetCategories.reduce((s, c) => s + (parseFloat(c.pct) || 0), 0);
+        const indicator = document.getElementById('pct-sum-indicator');
+        if (indicator) {
+            indicator.textContent = `Total: ${sum}%`;
+            if (sum === 100) {
+                indicator.style.color = 'var(--success)';
+            } else if (sum > 100) {
+                indicator.style.color = 'var(--danger)';
+            } else {
+                indicator.style.color = 'var(--warning)';
+            }
         }
-    });
+    };
+
+    const renderBudgetTable = () => {
+        const totalBudget = parseFloat(document.getElementById('custom-budget-total').value) || 0;
+        const sum = budgetCategories.reduce((s, c) => s + (parseFloat(c.pct) || 0), 0);
+
+        const validationMsg = document.getElementById('budget-validation-msg');
+        if (sum !== 100) {
+            if (validationMsg) validationMsg.style.display = 'block';
+            return;
+        } else {
+            if (validationMsg) validationMsg.style.display = 'none';
+        }
+
+        const tbody = document.getElementById('budget-comparison-tbody');
+        if (!tbody) return;
+
+        const formatMoney = (val) => `₹${Math.abs(val).toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0})}`;
+        const formatDiff = (val) => {
+            const color = val >= 0 ? 'var(--success)' : 'var(--danger)';
+            const sign = val >= 0 ? '+' : '-';
+            return `<span style="color: ${color}">${sign}${formatMoney(val)}</span>`;
+        };
+
+        let rows = '';
+        budgetCategories.forEach((cat, idx) => {
+            const ideal = (cat.pct / 100) * totalBudget;
+            let actual = 0;
+            if (cat.flow === 'investment') {
+                actual = allTxs.filter(t => t.flow === 'investment').reduce((s, t) => s + parseFloat(t.amount), 0);
+            } else {
+                actual = allTxs.filter(t => cat.txCategories.includes(t.category) && t.flow === 'expense')
+                               .reduce((s, t) => s + parseFloat(t.amount), 0);
+            }
+            const diff = ideal - actual;
+            const border = idx < budgetCategories.length - 1 ? 'border-bottom: 1px solid rgba(255,255,255,0.05);' : '';
+            rows += `
+                <tr style="${border}">
+                    <td style="padding: 0.75rem 1rem; color: #fff;">${cat.name}</td>
+                    <td style="padding: 0.75rem 1rem;">${cat.pct}%</td>
+                    <td style="padding: 0.75rem 1rem;">${formatMoney(ideal)}</td>
+                    <td style="padding: 0.75rem 1rem;">${formatMoney(actual)}</td>
+                    <td style="padding: 0.75rem 1rem;">${formatDiff(diff)}</td>
+                </tr>
+            `;
+        });
+        tbody.innerHTML = rows;
+    };
+
+    renderCategoryRows();
+    updatePctIndicator();
+    renderBudgetTable();
+
+    // Apply Plan button
+    const applyBtn = document.getElementById('apply-custom-budget');
+    if (applyBtn) {
+        const newBtn = applyBtn.cloneNode(true);
+        applyBtn.parentNode.replaceChild(newBtn, applyBtn);
+        newBtn.addEventListener('click', () => {
+            renderBudgetTable();
+        });
+    }
+
+    // Add Category button
+    const addCatBtn = document.getElementById('add-budget-category');
+    if (addCatBtn) {
+        const newAddBtn = addCatBtn.cloneNode(true);
+        addCatBtn.parentNode.replaceChild(newAddBtn, addCatBtn);
+        newAddBtn.addEventListener('click', () => {
+            const remaining = 100 - budgetCategories.reduce((s, c) => s + (parseFloat(c.pct) || 0), 0);
+            budgetCategories.push({
+                name: 'New Category',
+                pct: Math.max(0, remaining),
+                txCategories: [],
+                flow: 'expense'
+            });
+            renderCategoryRows();
+            updatePctIndicator();
+        });
+    }
+
+    // Toggle Add Expense form
+    const toggleBtn = document.getElementById('toggle-add-expense');
+    const formCard = document.getElementById('add-expense-form-card');
+    if (toggleBtn && formCard) {
+        const newToggle = toggleBtn.cloneNode(true);
+        toggleBtn.parentNode.replaceChild(newToggle, toggleBtn);
+        newToggle.addEventListener('click', () => {
+            formCard.style.display = formCard.style.display === 'none' ? 'block' : 'none';
+            lucide.createIcons();
+        });
+    }
+
+    // Submit Expense handler
+    const submitBtn = document.getElementById('submit-expense');
+    if (submitBtn) {
+        const newSubmit = submitBtn.cloneNode(true);
+        submitBtn.parentNode.replaceChild(newSubmit, submitBtn);
+        newSubmit.addEventListener('click', () => {
+            const desc = document.getElementById('expense-desc').value.trim();
+            const amount = parseFloat(document.getElementById('expense-amount').value);
+            const category = document.getElementById('expense-category').value;
+
+            if (!desc || !amount || amount <= 0) {
+                showToast('Missing Info', 'Please enter a description and a valid amount.', 'warning');
+                return;
+            }
+
+            const flow = category === 'Investments' ? 'investment' : 'expense';
+            const newTx = {
+                id: 'manual-' + Date.now(),
+                description: desc,
+                amount: amount,
+                category: category,
+                flow: flow,
+                date: new Date().toISOString().split('T')[0],
+                reason: 'Manual Entry',
+                tags: [category, 'Manual']
+            };
+            transactions.push(newTx);
+
+            // Clear the form
+            document.getElementById('expense-desc').value = '';
+            document.getElementById('expense-amount').value = '';
+
+            showToast('Expense Added', `₹${amount} recorded under ${category}.`, 'success');
+
+            // Re-render the table immediately
+            renderBudgetTable();
+        });
+    }
+
+    lucide.createIcons();
 }
 
 // Render ledger database records
@@ -405,7 +577,7 @@ function renderLedger(filter = 'all', searchQuery = '') {
                     ${tagsHtml}
                 </div>
                 <div style="flex: 0 0 120px; text-align: right; font-family: var(--font-heading); font-size: 1.1rem; font-weight: 500;">
-                    <span class="${amountClass}">${amountSign}$${parseFloat(tx.amount).toFixed(2)}</span>
+                    <span class="${amountClass}">${amountSign}₹${parseFloat(tx.amount).toFixed(2)}</span>
                 </div>
             </div>
         `;
@@ -433,7 +605,7 @@ function checkPendingConfirmationsInbox() {
     pendingConfirmations.forEach((item, index) => {
         container.innerHTML += `
             <div class="confirm-question" style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.50rem;">
-                <span>You transferred <strong>$${item.amount.toFixed(2)}</strong> to <strong>${item.payee}</strong> on ${item.date}. What was this for?</span>
+                <span>You transferred <strong>₹${item.amount.toFixed(2)}</strong> to <strong>${item.payee}</strong> on ${item.date}. What was this for?</span>
                 <button class="btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;" onclick="triggerConfirmationFlow('${item.id}')">
                     <i data-lucide="help-circle"></i> Classify Context
                 </button>
@@ -461,7 +633,7 @@ function triggerConfirmationFlow(txId) {
         btn.classList.remove('active-option');
     });
 
-    document.getElementById('modal-confirm-amount').innerText = `$${activePendingTx.amount.toFixed(2)}`;
+    document.getElementById('modal-confirm-amount').innerText = `₹${activePendingTx.amount.toFixed(2)}`;
     document.getElementById('modal-confirm-payee').innerText = activePendingTx.payee;
 
     document.getElementById('confirm-modal').classList.add('active');
@@ -510,7 +682,9 @@ async function submitP2PConfirmation() {
 // Opportunities & Blind Spots lists rendering
 // Spendings categorized breakdown renderer
 function renderSpendings() {
-    const selectedMonth = parseInt(document.getElementById('spendings-month-select').value);
+    const monthSelect = document.getElementById('spendings-month-select');
+    if (!monthSelect) return;
+    const selectedMonth = parseInt(monthSelect.value);
     const year = 2026;
 
     // Filter expense transactions for the selected month
@@ -535,7 +709,7 @@ function renderSpendings() {
 
     // Total spent
     const totalSpent = monthExpenses.reduce((sum, t) => sum + parseFloat(t.amount), 0);
-    document.getElementById('spendings-total-amount').innerText = `$${totalSpent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    document.getElementById('spendings-total-amount').innerText = `₹${totalSpent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     document.getElementById('spendings-cat-count').innerHTML = `across <strong>${sortedCategories.length}</strong> categories`;
 
     // Category visual config
@@ -587,7 +761,7 @@ function renderSpendings() {
                             ${tagsText ? `<span style="opacity:0.5;">· ${tagsText}</span>` : ''}
                         </span>
                     </div>
-                    <span class="spending-item-amount">-$${parseFloat(tx.amount).toFixed(2)}</span>
+                    <span class="spending-item-amount">-₹${parseFloat(tx.amount).toFixed(2)}</span>
                 </div>
             `;
         });
@@ -606,7 +780,7 @@ function renderSpendings() {
                             <div class="hint-text">${group.items.length} transaction${group.items.length > 1 ? 's' : ''} · ${percentOfTotal}% of total</div>
                         </div>
                     </div>
-                    <span class="spending-cat-total" style="color: ${cfg.color};">$${group.total.toFixed(2)}</span>
+                    <span class="spending-cat-total" style="color: ${cfg.color};">₹${group.total.toFixed(2)}</span>
                 </div>
                 <div class="spending-cat-items">
                     ${itemsHtml}
@@ -829,10 +1003,10 @@ function updateSandboxValues() {
     const bonus = document.getElementById('slider-bonus').value;
     const debt = document.getElementById('slider-debt').value;
 
-    document.getElementById('val-invest').innerText = `+$${invest}`;
+    document.getElementById('val-invest').innerText = `+₹${invest}`;
     document.getElementById('val-dining').innerText = `${dining}%`;
     document.getElementById('val-bonus').innerText = `${bonus}%`;
-    document.getElementById('val-debt').innerText = debt === '0' ? 'No change' : `+$${debt}/mo`;
+    document.getElementById('val-debt').innerText = debt === '0' ? 'No change' : `+₹${debt}/mo`;
 }
 
 function runSandboxSimulation() {
@@ -965,6 +1139,10 @@ function init3DCardTilt() {
     cards.forEach(card => {
         // Avoid duplicate listeners by checking a flag
         if (card._tiltInit) return;
+        
+        // Skip cards that have the data-no-tilt attribute
+        if (card.hasAttribute('data-no-tilt')) return;
+
         card._tiltInit = true;
 
         card.addEventListener('mousemove', (e) => {

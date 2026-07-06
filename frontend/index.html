@@ -107,7 +107,7 @@
                         <div class="flip-card-front card stat-card">
                             <div>
                                 <div class="stat-label">Net Wealth Built</div>
-                                <div class="stat-value" id="stat-networth">$42,650</div>
+                                <div class="stat-value" id="stat-networth">₹42,650</div>
                                 <div class="stat-change up">
                                     <i data-lucide="trending-up"></i>
                                     <span>+4.2% this month</span>
@@ -122,15 +122,15 @@
                             <div class="back-title">Wealth Breakdown</div>
                             <div class="back-detail-row">
                                 <span class="back-detail-label">Checking</span>
-                                <span class="back-detail-value">$14,250</span>
+                                <span class="back-detail-value">₹14,250</span>
                             </div>
                             <div class="back-detail-row">
                                 <span class="back-detail-label">Investments</span>
-                                <span class="back-detail-value">$28,400</span>
+                                <span class="back-detail-value">₹28,400</span>
                             </div>
                             <div class="back-detail-row">
                                 <span class="back-detail-label">Emergency Fund</span>
-                                <span class="back-detail-value">$2,688</span>
+                                <span class="back-detail-value">₹2,688</span>
                             </div>
                             <div class="back-sparkline"></div>
                             <div class="back-trend">6-month trend · Steady growth</div>
@@ -143,7 +143,7 @@
                         <div class="flip-card-front card stat-card">
                             <div>
                                 <div class="stat-label">Spent This Month</div>
-                                <div class="stat-value" id="stat-spent">$2,410</div>
+                                <div class="stat-value" id="stat-spent">₹2,410</div>
                                 <div class="stat-change down" id="stat-spent-change">
                                     <i data-lucide="trending-down"></i>
                                     <span>-12.4% vs last month</span>
@@ -166,7 +166,7 @@
                             </div>
                             <div class="back-detail-row">
                                 <span class="back-detail-label">Avg. Daily</span>
-                                <span class="back-detail-value">$69.65</span>
+                                <span class="back-detail-value">₹69.65</span>
                             </div>
                             <div class="back-sparkline"></div>
                             <div class="back-trend">Spending down vs last month ↓</div>
@@ -179,7 +179,7 @@
                         <div class="flip-card-front card stat-card">
                             <div>
                                 <div class="stat-label">Invested This Month</div>
-                                <div class="stat-value" id="stat-invested">$1,850</div>
+                                <div class="stat-value" id="stat-invested">₹1,850</div>
                                 <div class="stat-change up">
                                     <i data-lucide="shield-check"></i>
                                     <span>100% SIP consistency</span>
@@ -194,11 +194,11 @@
                             <div class="back-title">Investment Split</div>
                             <div class="back-detail-row">
                                 <span class="back-detail-label">Index Funds</span>
-                                <span class="back-detail-value">$800</span>
+                                <span class="back-detail-value">₹800</span>
                             </div>
                             <div class="back-detail-row">
                                 <span class="back-detail-label">SIP Auto</span>
-                                <span class="back-detail-value">$500</span>
+                                <span class="back-detail-value">₹500</span>
                             </div>
                             <div class="back-detail-row">
                                 <span class="back-detail-label">Consistency</span>
@@ -230,11 +230,11 @@
                             <div class="back-title">Savings Analysis</div>
                             <div class="back-detail-row">
                                 <span class="back-detail-label">Income</span>
-                                <span class="back-detail-value">$4,500</span>
+                                <span class="back-detail-value">₹4,500</span>
                             </div>
                             <div class="back-detail-row">
                                 <span class="back-detail-label">Saved</span>
-                                <span class="back-detail-value">$2,689</span>
+                                <span class="back-detail-value">₹2,689</span>
                             </div>
                             <div class="back-detail-row">
                                 <span class="back-detail-label">Target</span>
@@ -285,19 +285,14 @@
 
             <!-- Visual Charts -->
             <div class="dashboard-grid">
-                <div class="card col-7 reveal-scale">
+                <div class="card col-12 reveal-scale">
                     <h3 class="stat-label">Wealth Development Trend</h3>
                     <div style="height: 260px; position: relative;">
                         <canvas id="wealthTrendChart"></canvas>
                     </div>
                 </div>
-                <div class="card col-5 reveal-scale">
-                    <h3 class="stat-label">Month's Outflow Structure</h3>
-                    <div style="height: 260px; position: relative; display: flex; justify-content: center;">
-                        <canvas id="outflowChart"></canvas>
-                    </div>
-                </div>
             </div>
+
         </section>
 
         <!-- TRANSACTIONS TAB -->
@@ -364,7 +359,7 @@
                     </div>
                     <div>
                         <div class="stat-label" style="margin-bottom: 0.2rem;">Total Spent This Month</div>
-                        <div class="stat-value" id="spendings-total-amount">$0</div>
+                        <div class="stat-value" id="spendings-total-amount">₹0</div>
                     </div>
                 </div>
                 <div class="spendings-category-count" id="spendings-cat-count">
@@ -404,66 +399,99 @@
             </div>
         </section>
 
-        <!-- WHAT-IF SANDBOX TAB -->
         <section id="sandbox" class="page-section">
             <div class="page-hero-text" data-text="Budget">Budget</div>
             <header>
                 <div>
-                    <h1 class="page-title">What-If Sandbox</h1>
-                    <p class="subtitle">Simulate adjustments to understand long-term effects.</p>
+                    <h1 class="page-title">Budget Planner</h1>
+                    <p class="subtitle">Set your custom budget allocations and compare with actual spending.</p>
+                </div>
+                <div>
+                    <button id="toggle-add-expense" class="opp-action-btn" style="padding: 0.5rem 1.25rem; font-size: 0.9rem; background: rgba(99, 102, 241, 0.15); border-color: rgba(99, 102, 241, 0.35);"><i data-lucide="plus-circle" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 6px;"></i>Add Expense</button>
                 </div>
             </header>
 
-            <div class="card sandbox-container reveal">
-                <div class="sandbox-controls">
-                    <h3 class="stat-label">Model Settings</h3>
+            <!-- Add Expense Inline Form -->
+            <div class="card reveal" id="add-expense-form-card" style="display: none; margin-bottom: 1.5rem;">
+                <h3 class="stat-label" style="margin-bottom: 1rem;">Log a New Expense</h3>
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end;">
+                    <div>
+                        <label class="form-label" style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 0.25rem;">Description</label>
+                        <input type="text" id="expense-desc" class="form-input" style="width: 180px; padding: 0.5rem; font-size: 0.9rem; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 4px;" placeholder="e.g. Grocery Shopping">
+                    </div>
+                    <div>
+                        <label class="form-label" style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 0.25rem;">Amount (₹)</label>
+                        <input type="number" id="expense-amount" class="form-input" style="width: 120px; padding: 0.5rem; font-size: 0.9rem; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 4px;" placeholder="500">
+                    </div>
+                    <div>
+                        <label class="form-label" style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 0.25rem;">Category</label>
+                        <select id="expense-category" class="form-input" style="width: 150px; padding: 0.5rem; font-size: 0.9rem; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 4px;">
+                            <optgroup label="Needs">
+                                <option value="Rent">Rent</option>
+                                <option value="Bills">Bills</option>
+                                <option value="Utilities">Utilities</option>
+                                <option value="Grocery">Grocery</option>
+                            </optgroup>
+                            <optgroup label="Wants">
+                                <option value="Food">Food (Dining/Takeout)</option>
+                                <option value="Travel">Travel</option>
+                                <option value="Shopping">Shopping</option>
+                            </optgroup>
+                            <optgroup label="Savings">
+                                <option value="Investments">Investments</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div>
+                        <button id="submit-expense" class="opp-action-btn" style="padding: 0.5rem 1.5rem; font-size: 0.9rem; background: rgba(34,197,94,0.15); border-color: rgba(34,197,94,0.35);"><i data-lucide="check" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></i>Save</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-grid">
+                <div class="card col-12 reveal-scale" id="budget-comparison-card" data-no-tilt>
+                    <h3 class="stat-label">Custom Budget Strategy & Comparison</h3>
                     
-                    <div class="sandbox-control-group">
-                        <div class="sandbox-label-row">
-                            <span class="form-label">Increase Monthly Investments</span>
-                            <span class="sandbox-slider-val" id="val-invest">+$0</span>
+                    <!-- Total Budget -->
+                    <div style="display: flex; gap: 1.5rem; margin-top: 1.25rem; flex-wrap: wrap; align-items: flex-end; background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 8px;">
+                        <div>
+                            <label class="form-label" style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 0.25rem;">Total Budget (₹)</label>
+                            <input type="number" id="custom-budget-total" class="form-input" style="width: 160px; padding: 0.5rem; font-size: 0.95rem; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 4px;" value="4500">
                         </div>
-                        <input type="range" class="sandbox-slider" id="slider-invest" min="0" max="1000" step="50" value="0">
-                        <span class="hint-text">Allocate more cash flow directly into mutual fund/SIPs.</span>
+                        <div style="margin-left: auto; display: flex; align-items: center; gap: 0.75rem;">
+                            <button id="apply-custom-budget" class="opp-action-btn" style="padding: 0.5rem 1.5rem; font-size: 0.95rem;">Apply Plan</button>
+                        </div>
                     </div>
 
-                    <div class="sandbox-control-group">
-                        <div class="sandbox-label-row">
-                            <span class="form-label">Reduce Food Spending</span>
-                            <span class="sandbox-slider-val" id="val-dining">0%</span>
-                        </div>
-                        <input type="range" class="sandbox-slider" id="slider-dining" min="0" max="80" step="5" value="0">
-                        <span class="hint-text">Lower food/delivery splits. Savings go to investments.</span>
+                    <!-- Dynamic Category Rows -->
+                    <div id="budget-categories-list" style="margin-top: 1.25rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                        <!-- Populated by JS -->
                     </div>
 
-                    <div class="sandbox-control-group">
-                        <div class="sandbox-label-row">
-                            <span class="form-label">Invest Annual Bonus</span>
-                            <span class="sandbox-slider-val" id="val-bonus">0%</span>
-                        </div>
-                        <input type="range" class="sandbox-slider" id="slider-bonus" min="0" max="100" step="10" value="0">
-                        <span class="hint-text">Percentage of future annual bonuses sent to long-term index funds.</span>
+                    <div style="margin-top: 0.75rem;">
+                        <button id="add-budget-category" class="opp-action-btn" style="padding: 0.4rem 1rem; font-size: 0.85rem; background: rgba(99,102,241,0.1); border-color: rgba(99,102,241,0.25);"><i data-lucide="plus" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></i>Add Category</button>
                     </div>
 
-                    <div class="sandbox-control-group">
-                        <div class="sandbox-label-row">
-                            <span class="form-label">Accelerate Debt Repayment</span>
-                            <span class="sandbox-slider-val" id="val-debt">No change</span>
-                        </div>
-                        <input type="range" class="sandbox-slider" id="slider-debt" min="0" max="300" step="50" value="0">
-                        <span class="hint-text">Add extra monthly prepayments to reduce liability.</span>
-                    </div>
+                    <div id="budget-validation-msg" style="color: var(--danger); font-size: 0.85rem; margin-top: 0.75rem; display: none;"><i data-lucide="alert-circle" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></i> Total percentages must equal 100%.</div>
 
-                    <div class="sandbox-output-summary" id="sandbox-summary-text">
-                        Adjust sliders to forecast how simple adjustments compound your wealth security and save debt interest over 15 years.
+                    <div style="margin-top: 1.5rem; overflow-x: auto;">
+                        <table class="transaction-table" style="width: 100%; border-collapse: collapse; text-align: left;">
+                            <thead>
+                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); font-size: 0.85rem;">
+                                    <th style="padding: 0.75rem 1rem; font-weight: 500;">Category</th>
+                                    <th style="padding: 0.75rem 1rem; font-weight: 500;">Target %</th>
+                                    <th style="padding: 0.75rem 1rem; font-weight: 500;">Ideal Budget (₹)</th>
+                                    <th style="padding: 0.75rem 1rem; font-weight: 500;">Actual Spent (₹)</th>
+                                    <th style="padding: 0.75rem 1rem; font-weight: 500;">Difference (₹)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="budget-comparison-tbody">
+                                <!-- Dynamically populated by JS -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-
-                <div class="sandbox-chart-container">
-                    <h3 class="stat-label">15-Year Wealth Projections</h3>
-                    <canvas id="sandboxChart"></canvas>
-                </div>
-            </div> <!-- close .card.sandbox-container -->
+            </div>
         </section> <!-- close #sandbox -->
 
         <!-- SPLIT EXPENSES TAB -->
@@ -503,7 +531,7 @@
                                     <div style="font-size:0.75rem; color:var(--text-muted);">Last split: 3 days ago</div>
                                 </div>
                             </div>
-                            <span style="color:var(--danger); font-family:var(--font-heading); font-size:0.9rem; font-weight:500;">You owe $35.00</span>
+                            <span style="color:var(--danger); font-family:var(--font-heading); font-size:0.9rem; font-weight:500;">You owe ₹35.00</span>
                         </div>
                         <div style="display:flex; justify-content:space-between; align-items:center; padding: 0.75rem 1rem; background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); border-radius: 12px;">
                             <div style="display:flex; align-items:center; gap:0.75rem;">
@@ -513,7 +541,7 @@
                                     <div style="font-size:0.75rem; color:var(--text-muted);">Monthly Utilities</div>
                                 </div>
                             </div>
-                            <span style="color:var(--success); font-family:var(--font-heading); font-size:0.9rem; font-weight:500;">Owes you $55.00</span>
+                            <span style="color:var(--success); font-family:var(--font-heading); font-size:0.9rem; font-weight:500;">Owes you ₹55.00</span>
                         </div>
                     </div>
                 </div>
@@ -637,7 +665,7 @@
                                     <div style="font-size:0.75rem; color:var(--text-muted);">Connected 14 days ago</div>
                                 </div>
                             </div>
-                            <span style="font-family:var(--font-heading); font-size:0.95rem; font-weight:500; color: white;">$14,250.00</span>
+                            <span style="font-family:var(--font-heading); font-size:0.95rem; font-weight:500; color: white;">₹14,250.00</span>
                         </div>
 
                         <div style="display:flex; justify-content:space-between; align-items:center; padding: 0.75rem 1rem; background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); border-radius: 12px;">
@@ -648,7 +676,7 @@
                                     <div style="font-size:0.75rem; color:var(--text-muted);">Connected 14 days ago</div>
                                 </div>
                             </div>
-                            <span style="font-family:var(--font-heading); font-size:0.95rem; font-weight:500; color: white;">$28,400.00</span>
+                            <span style="font-family:var(--font-heading); font-size:0.95rem; font-weight:500; color: white;">₹28,400.00</span>
                         </div>
                     </div>
                 </div>
@@ -665,7 +693,7 @@
                 <i data-lucide="x" class="modal-close" id="close-confirm-modal-btn"></i>
             </div>
             <div class="modal-body">
-                <p>We detected a P2P transaction of <strong id="modal-confirm-amount" style="color:var(--warning);">$120</strong> to <strong id="modal-confirm-payee">John Doe</strong>.</p>
+                <p>We detected a P2P transaction of <strong id="modal-confirm-amount" style="color:var(--warning);">₹120</strong> to <strong id="modal-confirm-payee">John Doe</strong>.</p>
                 <p style="font-size: 0.9rem; color: var(--text-secondary);">Because purposes for person-to-person transfers shift, please confirm the category for this event:</p>
                 
                 <div class="confirm-options">
@@ -703,12 +731,12 @@
                 <p class="hint-text">Choose a simulation preset to mimic bank updates or write a custom payment transfer. Watch the AI classify or prompt for context in real time!</p>
                 
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
-                    <button class="btn-option" onclick="simulatePreset('amazon')" style="text-align:center;">🛍️ Amazon Order ($45)</button>
-                    <button class="btn-option" onclick="simulatePreset('salary')" style="text-align:center;">💼 Payday Deposit ($4,500)</button>
-                    <button class="btn-option" onclick="simulatePreset('netflix')" style="text-align:center;">🎬 Netflix Bill ($15.49)</button>
-                    <button class="btn-option" onclick="simulatePreset('mutualfund')" style="text-align:center;">📈 Index Fund Buy ($500)</button>
-                    <button class="btn-option" onclick="simulatePreset('rent')" style="text-align:center;">🏠 Send Rent to Landlord ($1,200)</button>
-                    <button class="btn-option" onclick="simulatePreset('friend')" style="text-align:center;">👤 Send split to David ($25)</button>
+                    <button class="btn-option" onclick="simulatePreset('amazon')" style="text-align:center;">🛍️ Amazon Order (₹45)</button>
+                    <button class="btn-option" onclick="simulatePreset('salary')" style="text-align:center;">💼 Payday Deposit (₹4,500)</button>
+                    <button class="btn-option" onclick="simulatePreset('netflix')" style="text-align:center;">🎬 Netflix Bill (₹15.49)</button>
+                    <button class="btn-option" onclick="simulatePreset('mutualfund')" style="text-align:center;">📈 Index Fund Buy (₹500)</button>
+                    <button class="btn-option" onclick="simulatePreset('rent')" style="text-align:center;">🏠 Send Rent to Landlord (₹1,200)</button>
+                    <button class="btn-option" onclick="simulatePreset('friend')" style="text-align:center;">👤 Send split to David (₹25)</button>
                 </div>
 
                 <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 0.5rem 0;">
@@ -722,7 +750,7 @@
 
                     <div class="form-row">
                         <div class="form-group">
-                            <label class="form-label" for="sim-amount">Amount ($)</label>
+                            <label class="form-label" for="sim-amount">Amount (₹)</label>
                             <input type="number" step="0.01" class="form-input" id="sim-amount" placeholder="25.00" required>
                         </div>
                         <div class="form-group">

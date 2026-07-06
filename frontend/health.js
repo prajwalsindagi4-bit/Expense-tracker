@@ -60,7 +60,7 @@ function calculateFinancialHealth(txs) {
     const budgetScore = Math.max(0, Math.min(100, Math.round((0.5 - discretionaryRatio) * 200))); // <= 30% ratio gets high score
 
     // 4. Emergency Buffer Preparedness (Mocked cumulative reserves in our system)
-    // Seed starts with $42,650 wealth. Average monthly expense is ~$1,600.
+    // Seed starts with ₹42,650 wealth. Average monthly expense is ~₹1,600.
     // 42650 / 1600 = ~26 months of emergency fund. That is extremely strong emergency reserve.
     const emergencyScore = 95; // Steady, high emergency reserve
 

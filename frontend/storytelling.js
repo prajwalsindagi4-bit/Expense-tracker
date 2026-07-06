@@ -34,31 +34,31 @@ function generateFinancialStory(txs) {
     let intro = "";
     if (spentThisMonth <= spentLastMonth) {
         const diff = (spentLastMonth - spentThisMonth).toFixed(0);
-        intro = `This month, your day-to-day spending decreased by <strong>$${diff}</strong> compared to last month. Your core budget remained exceptionally stable, showing steady progress in your financial habits.`;
+        intro = `This month, your day-to-day spending decreased by <strong>₹${diff}</strong> compared to last month. Your core budget remained exceptionally stable, showing steady progress in your financial habits.`;
     } else {
         const diff = (spentThisMonth - spentLastMonth).toFixed(0);
-        intro = `This month, your outflows grew slightly by <strong>$${diff}</strong>. However, there is no reason for concern: your essential expenditures are fully supported by your income stream.`;
+        intro = `This month, your outflows grew slightly by <strong>₹${diff}</strong>. However, there is no reason for concern: your essential expenditures are fully supported by your income stream.`;
     }
 
     let foodSection = "";
     if (foodThisMonth < foodLastMonth) {
         const diff = (foodLastMonth - foodThisMonth).toFixed(0);
-        foodSection = `Your dining and meal splits were <strong>$${diff} lower</strong> than last month. This slight reduction shows that minor, frictionless adjustments are already adding up.`;
+        foodSection = `Your dining and meal splits were <strong>₹${diff} lower</strong> than last month. This slight reduction shows that minor, frictionless adjustments are already adding up.`;
     } else if (foodThisMonth > foodLastMonth) {
         const diff = (foodThisMonth - foodLastMonth).toFixed(0);
-        foodSection = `We noticed a modest increase of <strong>$${diff}</strong> in food splits and takeout orders. Sharing meals is a key part of life; keeping an eye on delivery frequency next week represents a simple opportunity to redirect cash flow.`;
+        foodSection = `We noticed a modest increase of <strong>₹${diff}</strong> in food splits and takeout orders. Sharing meals is a key part of life; keeping an eye on delivery frequency next week represents a simple opportunity to redirect cash flow.`;
     } else {
         foodSection = `Your food splits remained exactly matching your historical baseline, maintaining a balanced habit.`;
     }
 
     let investSection = "";
     if (investedThisMonth >= 1300) {
-        investSection = `On the wealth-building front, you successfully routed <strong>$${investedThisMonth.toFixed(0)}</strong> directly into index funds and SIPs. You maintained a 100% investment consistency streak for the 6th consecutive month.`;
+        investSection = `On the wealth-building front, you successfully routed <strong>₹${investedThisMonth.toFixed(0)}</strong> directly into index funds and SIPs. You maintained a 100% investment consistency streak for the 6th consecutive month.`;
     } else {
-        investSection = `You contributed $${investedThisMonth.toFixed(0)} to your long-term wealth portfolio this month. Consistency is the key to compounding growth.`;
+        investSection = `You contributed ₹${investedThisMonth.toFixed(0)} to your long-term wealth portfolio this month. Consistency is the key to compounding growth.`;
     }
 
-    let conclusion = `Based on current behaviors, you are fully on track to cross your next major Net Worth milestone of <strong>$50,000</strong> in approximately 4 months. You are in complete control of your financial journey.`;
+    let conclusion = `Based on current behaviors, you are fully on track to cross your next major Net Worth milestone of <strong>₹50,000</strong> in approximately 4 months. You are in complete control of your financial journey.`;
 
     return `
         <p>${intro}</p>
