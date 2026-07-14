@@ -238,4 +238,14 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.style.opacity = '0.6';
         setTimeout(triggerCardExit, 200);
     });
+
+    const socialBtns = document.querySelectorAll('.btn-auth-social');
+    socialBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            btn.style.pointerEvents = 'none';
+            btn.style.opacity = '0.6';
+            setTimeout(triggerCardExit, 200);
+        });
+    });
 });
