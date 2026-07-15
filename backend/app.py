@@ -6,68 +6,24 @@ import random
 from datetime import datetime
 import csv
 import io
-import sqlite3
 import hashlib
 import uuid
 import os
 import json
+from dotenv import load_dotenv
+from supabase import create_client, Client
+
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
 
-DATABASE = 'users.db'
-
-def init_db():
-    conn = sqlite3.connect(DATABASE)
-    c = conn.cursor()
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS users (
-            id TEXT PRIMARY KEY,
-            name TEXT,
-            email TEXT UNIQUE,
-            password_hash TEXT,
-            google_id TEXT
-        )
-    ''')
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS transactions (
-            id TEXT PRIMARY KEY,
-            user_id TEXT,
-            date TEXT,
-            description TEXT,
-            category TEXT,
-            flow TEXT,
-            amount REAL,
-            reason TEXT,
-            tags TEXT
-        )
-    ''')
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS pending_confirmations (
-            id TEXT PRIMARY KEY,
-            user_id TEXT,
-            date TEXT,
-            description TEXT,
-            flow TEXT,
-            amount REAL,
-            payee_name TEXT,
-            category TEXT,
-            reason TEXT,
-            tags TEXT
-        )
-    ''')
-    conn.commit()
-    conn.close()
-
-init_db()
+url: str = os.environ.get("SUPABASE_URL")
+key: str = os.environ.get("SUPABASE_KEY")
+supabase: Client = create_client(url, key)
 
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
-
-def get_db():
-    conn = sqlite3.connect(DATABASE)
-    conn.row_factory = sqlite3.Row
-    return conn
 
 AUTO_MERCHANTS = [
     { 'name': 'Netflix', 'category': 'Bills', 'reason': 'Subscription', 'tags': ['Entertainment', 'Subscription'], 'match': ['netflix'] },
@@ -176,20 +132,21 @@ def signup():
     if not email or not password:
         return jsonify({'error': 'Email and password required'}), 400
         
-    conn = get_db()
-    c = conn.cursor()
     try:
         user_id = str(uuid.uuid4())
-        c.execute('INSERT INTO users (id, name, email, password_hash) VALUES (?, ?, ?, ?)',
-                  (user_id, name, email, hash_password(password)))
-        conn.commit()
+        user_data = {
+            'id': user_id,
+            'name': name,
+            'email': email,
+            'password_hash': hash_password(password)
+        }
+        res = supabase.table('users').insert(user_data).execute()
         seed_user_transactions(user_id)
-    except sqlite3.IntegrityError:
-        conn.close()
-        return jsonify({'error': 'Email already exists'}), 409
-        
-    conn.close()
-    return jsonify({'status': 'success', 'user': {'id': user_id, 'name': name, 'email': email}})
+        return jsonify({'status': 'success', 'user': {'id': user_id, 'name': name, 'email': email}})
+    except Exception as e:
+        if 'duplicate key value' in str(e).lower() or 'unique constraint' in str(e).lower():
+            return jsonify({'error': 'Email already exists'}), 409
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/auth/login', methods=['POST'])
 def login():
@@ -197,14 +154,10 @@ def login():
     email = data.get('email')
     password = data.get('password')
     
-    conn = get_db()
-    c = conn.cursor()
-    c.execute('SELECT id, name, email FROM users WHERE email = ? AND password_hash = ?', (email, hash_password(password)))
-    row = c.fetchone()
-    conn.close()
+    res = supabase.table('users').select('id, name, email').eq('email', email).eq('password_hash', hash_password(password)).execute()
     
-    if row:
-        return jsonify({'status': 'success', 'user': dict(row)})
+    if res.data and len(res.data) > 0:
+        return jsonify({'status': 'success', 'user': res.data[0]})
     else:
         return jsonify({'error': 'Invalid credentials'}), 401
 
@@ -217,22 +170,22 @@ def google_auth():
     if not email:
         return jsonify({'error': 'Email required'}), 400
         
-    conn = get_db()
-    c = conn.cursor()
-    c.execute('SELECT id, name, email FROM users WHERE email = ?', (email,))
-    row = c.fetchone()
+    res = supabase.table('users').select('id, name, email').eq('email', email).execute()
     
-    if row:
-        user = dict(row)
+    if res.data and len(res.data) > 0:
+        user = res.data[0]
     else:
         user_id = str(uuid.uuid4())
-        c.execute('INSERT INTO users (id, name, email, google_id) VALUES (?, ?, ?, ?)',
-                  (user_id, name, email, 'google'))
-        conn.commit()
+        user_data = {
+            'id': user_id,
+            'name': name,
+            'email': email,
+            'google_id': 'google'
+        }
+        supabase.table('users').insert(user_data).execute()
         seed_user_transactions(user_id)
         user = {'id': user_id, 'name': name, 'email': email}
         
-    conn.close()
     return jsonify({'status': 'success', 'user': user})
 
 @app.route('/api/transactions', methods=['GET'])
@@ -240,26 +193,22 @@ def get_transactions():
     user_id = request.headers.get('X-User-Id')
     if not user_id: return jsonify({'error': 'Unauthorized'}), 401
     
-    conn = get_db()
-    c = conn.cursor()
-    c.execute('SELECT * FROM transactions WHERE user_id = ? ORDER BY date DESC', (user_id,))
-    tx_rows = c.fetchall()
-    c.execute('SELECT * FROM pending_confirmations WHERE user_id = ? ORDER BY date DESC', (user_id,))
-    pending_rows = c.fetchall()
-    conn.close()
+    tx_res = supabase.table('transactions').select('*').eq('user_id', user_id).order('date', desc=True).execute()
+    pending_res = supabase.table('pending_confirmations').select('*').eq('user_id', user_id).order('date', desc=True).execute()
     
-    txs = []
-    for r in tx_rows:
-        d = dict(r)
-        d['tags'] = json.loads(d['tags']) if d['tags'] else []
-        txs.append(d)
-        
-    pends = []
-    for r in pending_rows:
-        d = dict(r)
-        d['tags'] = json.loads(d['tags']) if d['tags'] else []
-        d['payee'] = d['payee_name']
-        pends.append(d)
+    txs = tx_res.data if tx_res.data else []
+    pends = pending_res.data if pending_res.data else []
+    
+    for t in txs:
+        if isinstance(t.get('tags'), str):
+            try: t['tags'] = json.loads(t['tags'])
+            except: t['tags'] = []
+            
+    for p in pends:
+        if isinstance(p.get('tags'), str):
+            try: p['tags'] = json.loads(p['tags'])
+            except: p['tags'] = []
+        p['payee'] = p.get('payee_name', '')
         
     return jsonify({
         'transactions': txs,
@@ -291,21 +240,19 @@ def simulate_transaction():
             
         pending_obj = {
             'id': new_tx_id,
+            'user_id': user_id,
             'date': date_str,
             'description': desc,
             'flow': direction,
             'amount': amount,
-            'payee': payee_name
+            'payee_name': payee_name,
+            'category': '',
+            'reason': '',
+            'tags': []
         }
         
-        conn = get_db()
-        c = conn.cursor()
-        c.execute('''
-            INSERT INTO pending_confirmations (id, user_id, date, description, flow, amount, payee_name, category, reason, tags)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (new_tx_id, user_id, date_str, desc, direction, amount, payee_name, '', '', '[]'))
-        conn.commit()
-        conn.close()
+        supabase.table('pending_confirmations').insert(pending_obj).execute()
+        pending_obj['payee'] = payee_name
 
         return jsonify({
             'status': 'needs_confirmation',
@@ -334,6 +281,7 @@ def simulate_transaction():
                 
         confirmed_tx = {
             'id': new_tx_id,
+            'user_id': user_id,
             'date': date_str,
             'description': desc,
             'category': final_category,
@@ -343,14 +291,7 @@ def simulate_transaction():
             'tags': final_tags
         }
         
-        conn = get_db()
-        c = conn.cursor()
-        c.execute('''
-            INSERT INTO transactions (id, user_id, date, description, category, flow, amount, reason, tags)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (new_tx_id, user_id, date_str, desc, final_category, direction, amount, final_reason, json.dumps(final_tags)))
-        conn.commit()
-        conn.close()
+        supabase.table('transactions').insert(confirmed_tx).execute()
 
         return jsonify({
             'status': 'auto_classified',
@@ -369,20 +310,17 @@ def confirm_transaction():
     reason = data.get('reason')
     tags = data.get('tags', [])
     
-    conn = get_db()
-    c = conn.cursor()
-    c.execute('SELECT * FROM pending_confirmations WHERE id = ? AND user_id = ?', (tx_id, user_id))
-    pending_row = c.fetchone()
+    pending_res = supabase.table('pending_confirmations').select('*').eq('id', tx_id).eq('user_id', user_id).execute()
     
-    if not pending_row:
-        conn.close()
+    if not pending_res.data or len(pending_res.data) == 0:
         return jsonify({'error': 'Not found'}), 404
         
-    pending_item = dict(pending_row)
-    c.execute('DELETE FROM pending_confirmations WHERE id = ? AND user_id = ?', (tx_id, user_id))
+    pending_item = pending_res.data[0]
+    supabase.table('pending_confirmations').delete().eq('id', tx_id).eq('user_id', user_id).execute()
     
     confirmed_tx = {
         'id': pending_item['id'],
+        'user_id': user_id,
         'date': pending_item['date'],
         'description': pending_item['description'],
         'category': category,
@@ -392,13 +330,7 @@ def confirm_transaction():
         'tags': tags
     }
     
-    c.execute('''
-        INSERT INTO transactions (id, user_id, date, description, category, flow, amount, reason, tags)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ''', (confirmed_tx['id'], user_id, confirmed_tx['date'], confirmed_tx['description'], category, confirmed_tx['flow'], confirmed_tx['amount'], reason, json.dumps(tags)))
-    
-    conn.commit()
-    conn.close()
+    supabase.table('transactions').insert(confirmed_tx).execute()
 
     return jsonify({
         'status': 'success',
@@ -486,17 +418,12 @@ def upload_statement():
             
         user_id = request.headers.get('X-User-Id')
         if not user_id: return jsonify({'error': 'Unauthorized'}), 401
+        
+        for t in new_txs:
+            t['user_id'] = user_id
 
-        conn = get_db()
-        c = conn.cursor()
         if len(new_txs) > 0:
-            for t in new_txs:
-                c.execute('''
-                    INSERT INTO transactions (id, user_id, date, description, category, flow, amount, reason, tags)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (t['id'], user_id, t['date'], t['description'], t['category'], t['flow'], t['amount'], t['reason'], json.dumps(t['tags'])))
-            conn.commit()
-        conn.close()
+            supabase.table('transactions').insert(new_txs).execute()
                 
         return jsonify({
             'status': 'success',
