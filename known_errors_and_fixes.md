@@ -34,3 +34,35 @@
 - **The Solution**: Either test the login button exclusively on the main production URL (`https://expense-tracker-prajwal11.vercel.app`) OR go back to the Google Cloud Console (APIs & Services > Credentials > Web Client) and add the specific Vercel preview URL to the Authorized JavaScript origins list.
 - **The Impact**: Aligns the Vercel branch preview deployment URLs with Google's strict security protocols, allowing OAuth testing on staging environments.
 - **The Use Case**: Essential for securely testing authentication flows on preview/staging branches before merging code into the main production branch.
+
+## 4. Lack of User Persistence and Backend Database
+- **The Error**: The application lacked a real backend and database, meaning user accounts were entirely simulated. The browser would "forget" the user immediately after refreshing the page, and the Google Login button only triggered a visual animation without actually saving the user's data anywhere.
+- **The Flow**: 
+  1. The user manually signs up or logs in with Google.
+  2. The frontend triggers the 3D card exit animation and redirects to the dashboard.
+  3. Because the frontend didn't communicate with a backend or save any session state in the browser, the user was effectively anonymous.
+  4. Upon refreshing the page, all context was lost, requiring the user to log in repeatedly.
+- **The Solution**: 
+  1. **Built a SQLite Database**: Updated the Flask backend (`backend/app.py`) to initialize a `users.db` SQLite database with a `users` table to store IDs, names, emails, and hashed passwords securely.
+  2. **Created Auth API Endpoints**: Built three new HTTP POST endpoints on the backend (`/api/auth/signup`, `/api/auth/login`, and `/api/auth/google`) to handle user registration, credential verification, and OAuth bridging.
+  3. **Connected the Frontend**: Modified the form submission listeners in `frontend/login.js` to send HTTP requests to these new backend endpoints instead of instantly playing the animation.
+  4. **Implemented LocalStorage Sessions**: Instructed the frontend to save the securely verified user object (returned by the backend) into the browser's `localStorage` (`localStorage.setItem('user', JSON.stringify(data.user))`), allowing the browser to persistently remember the user across page reloads. The exit animation is now only triggered upon successful backend verification.
+- **The Impact**: The application now features robust, secure, and persistent user authentication. The browser reliably remembers the user across sessions, and Google Logins are tied to genuine database accounts rather than just being a visual effect.
+- **The Use Case**: This fundamental architectural shift guarantees that users can securely store their data and return to the application seamlessly without redundant logins. It establishes the foundational backend structure required to eventually assign personal, isolated financial transaction histories to each individual user.
+
+## 5. Global Transaction State (Data Leakage Between Users)
+- **The Error**: Transactions were stored in a global Python variable array in the backend (`transactions = []`), meaning every user who logged in saw the exact same dashboard and financial data. There was no isolation between different users' accounts.
+- **The Flow**: 
+  1. User A logs into their account on the frontend.
+  2. The frontend sends a `GET /api/transactions` request.
+  3. The backend returns the global `transactions` array. User A sees the data.
+  4. User A simulates a new "Amazon Order". The backend adds it to the global array.
+  5. User B logs into their entirely separate account.
+  6. The frontend requests data, and User B sees User A's "Amazon Order" because the backend pulled from the exact same global memory.
+- **The Solution**: 
+  1. **Database Schema Upgrade**: Modified the SQLite database to include new `transactions` and `pending_confirmations` tables, both containing a critical `user_id` column.
+  2. **API Context Injection**: Updated the frontend (`transactions.js`) to extract the currently logged-in user's ID from `localStorage` and inject it into the HTTP headers (`X-User-Id`) for every single API request.
+  3. **Backend Filtering**: Rewrote the backend API endpoints (`/api/transactions`, `/api/transactions/simulate`, etc.) to intercept the `X-User-Id` header and execute targeted SQL queries (e.g., `SELECT * FROM transactions WHERE user_id = ?`) instead of reading from global memory.
+  4. **Blank Slate Initialization**: Disabled the automatic mock data seeding so all newly registered users start with a clean, isolated $0.00 dashboard.
+- **The Impact**: Transactions are now 100% isolated and strictly bound to the specific user who created them. Data leakage between accounts is completely eliminated.
+- **The Use Case**: This is a mandatory security and functional requirement for any SaaS or personal finance application. It ensures data privacy, prevents unauthorized access to other people's finances, and allows the app to function correctly for multiple concurrent users.

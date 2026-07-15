@@ -22,8 +22,8 @@
 
     <!-- Floating Top Navigation Bar (Matching Reference) -->
     <header id="top-navbar">
-        <div class="nav-close-icon" id="nav-close-btn">
-            <i data-lucide="x"></i>
+        <div class="nav-close-icon" id="nav-account-btn" title="Account Settings" onclick="document.querySelector('.nav-item[data-target=\'settings\']').click()">
+            <i data-lucide="user"></i>
         </div>
 
         <nav>
@@ -67,9 +67,7 @@
         </nav>
 
         <div class="navbar-actions">
-            <button class="btn-simulate" id="open-simulator-btn">
-                <span>Simulate</span>
-            </button>
+            <!-- Simulate button removed per user request -->
         </div>
     </header>
 
@@ -688,7 +686,53 @@
             </div>
         </section>
 
+        <!-- SETTINGS TAB -->
+        <section id="settings" class="page-section">
+            <div class="page-hero-text" data-text="Settings">Settings</div>
+            <header>
+                <div>
+                    <h1 class="page-title">Settings</h1>
+                    <p class="subtitle">Manage your account and preferences.</p>
+                </div>
+            </header>
+
+            <div class="dashboard-grid reveal-stagger">
+                <div class="card col-12 reveal">
+                    <h3 class="stat-label">Account Details</h3>
+                    <div style="margin-top: 1rem; padding: 1.5rem; background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); border-radius: 12px; display: flex; align-items: center; gap: 2rem;">
+                        <div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #7c5cfc, #38bdf8); display: flex; align-items: center; justify-content: center; border: 2px solid rgba(255,255,255,0.25);">
+                            <i data-lucide="user" style="width: 40px; height: 40px; color: white;"></i>
+                        </div>
+                        <div>
+                            <h2 style="font-family: var(--font-display); font-size: 1.4rem; font-weight: 600; color: white;" id="settings-user-name">User Name</h2>
+                            <p style="font-size: 0.95rem; color: var(--text-secondary);" id="settings-user-email">user@example.com</p>
+                            <button class="btn-auth-primary" style="margin-top: 1rem; width: auto; padding: 0.5rem 1.5rem; font-size: 0.8rem;" onclick="logout()">Log Out</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
     </main>
+
+    <script>
+        // Populate settings from localStorage
+        document.addEventListener('DOMContentLoaded', () => {
+            const userData = localStorage.getItem('user');
+            if (userData) {
+                try {
+                    const user = JSON.parse(userData);
+                    document.getElementById('settings-user-name').textContent = user.name || 'User';
+                    document.getElementById('settings-user-email').textContent = user.email || '';
+                } catch (e) {}
+            }
+        });
+
+        function logout() {
+            localStorage.removeItem('user');
+            window.location.href = 'login.html';
+        }
+    </script>
 
     <!-- P2P Frictionless Human Confirmation Overlay Modal -->
     <div class="modal-overlay" id="confirm-modal">

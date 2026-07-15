@@ -118,9 +118,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // ── Form Toggle ──
     const toSignupBtn = document.getElementById('to-signup');
     const toLoginBtn = document.getElementById('to-login');
+    let isAnimating = false;
 
     toSignupBtn.addEventListener('click', (e) => {
         e.preventDefault();
+        if (isAnimating) return;
+        isAnimating = true;
+
         loginWrapper.classList.add('fade-out');
         setTimeout(() => {
             loginWrapper.classList.add('hidden');
@@ -132,11 +136,15 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             if (nameInputLogin.value) nameInputSignup.value = nameInputLogin.value;
             if (emailInputLogin.value) emailInputSignup.value = emailInputLogin.value;
+            setTimeout(() => { isAnimating = false; }, 400);
         }, 400);
     });
 
     toLoginBtn.addEventListener('click', (e) => {
         e.preventDefault();
+        if (isAnimating) return;
+        isAnimating = true;
+
         signupWrapper.classList.add('fade-out');
         setTimeout(() => {
             signupWrapper.classList.add('hidden');
@@ -148,6 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             if (nameInputSignup.value) nameInputLogin.value = nameInputSignup.value;
             if (emailInputSignup.value) emailInputLogin.value = emailInputSignup.value;
+            setTimeout(() => { isAnimating = false; }, 400);
         }, 400);
     });
 
@@ -295,22 +304,75 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 1100);
     }
 
-    loginForm.addEventListener('submit', (e) => {
+    loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+        const email = emailInputLogin.value.trim();
+        const password = passwordInputLogin.value.trim();
+        
+        if (!email || !password) return alert('Email and password required');
+
         const btn = document.getElementById('btn-login-submit');
+        const originalText = btn.textContent;
         btn.textContent = 'Logging in...';
         btn.style.pointerEvents = 'none';
         btn.style.opacity = '0.6';
-        setTimeout(triggerCardExit, 200);
+        
+        try {
+            const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+            const data = await res.json();
+            
+            if (res.ok) {
+                localStorage.setItem('user', JSON.stringify(data.user));
+                setTimeout(triggerCardExit, 200);
+            } else {
+                throw new Error(data.error || 'Login failed');
+            }
+        } catch (err) {
+            alert(err.message);
+            btn.textContent = originalText;
+            btn.style.pointerEvents = 'auto';
+            btn.style.opacity = '1';
+        }
     });
 
-    signupForm.addEventListener('submit', (e) => {
+    signupForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+        const name = nameInputSignup.value.trim();
+        const email = emailInputSignup.value.trim();
+        const password = passwordInputSignup.value.trim();
+
+        if (!email || !password) return alert('Email and password required');
+
         const btn = document.getElementById('btn-signup-submit');
+        const originalText = btn.textContent;
         btn.textContent = 'Creating account...';
         btn.style.pointerEvents = 'none';
         btn.style.opacity = '0.6';
-        setTimeout(triggerCardExit, 200);
+        
+        try {
+            const res = await fetch('/api/auth/signup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, password })
+            });
+            const data = await res.json();
+            
+            if (res.ok) {
+                localStorage.setItem('user', JSON.stringify(data.user));
+                setTimeout(triggerCardExit, 200);
+            } else {
+                throw new Error(data.error || 'Signup failed');
+            }
+        } catch (err) {
+            alert(err.message);
+            btn.textContent = originalText;
+            btn.style.pointerEvents = 'auto';
+            btn.style.opacity = '1';
+        }
     });
 
     const socialBtns = document.querySelectorAll('.btn-auth-social');
@@ -338,7 +400,28 @@ document.addEventListener('DOMContentLoaded', () => {
                             .then(data => {
                                 const name = data.name || 'YOUR NAME';
                                 const email = data.email || 'your@email.com';
-                                triggerGoogleCardExit(name, email);
+                                
+                                fetch('/api/auth/google', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ name, email })
+                                })
+                                .then(r => r.json())
+                                .then(dbData => {
+                                    if (dbData.status === 'success') {
+                                        localStorage.setItem('user', JSON.stringify(dbData.user));
+                                        triggerGoogleCardExit(name, email);
+                                    } else {
+                                        throw new Error(dbData.error || 'Google auth failed');
+                                    }
+                                })
+                                .catch(err => {
+                                    alert(err.message);
+                                    document.querySelectorAll('.btn-auth-social').forEach(b => {
+                                        b.style.pointerEvents = 'auto';
+                                        b.style.opacity = '1';
+                                    });
+                                });
                             })
                             .catch(err => {
                                 console.error('Failed to fetch user profile:', err);

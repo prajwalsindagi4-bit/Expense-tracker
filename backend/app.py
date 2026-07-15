@@ -6,10 +6,68 @@ import random
 from datetime import datetime
 import csv
 import io
-
+import sqlite3
+import hashlib
+import uuid
+import os
+import json
 
 app = Flask(__name__)
 CORS(app)
+
+DATABASE = 'users.db'
+
+def init_db():
+    conn = sqlite3.connect(DATABASE)
+    c = conn.cursor()
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id TEXT PRIMARY KEY,
+            name TEXT,
+            email TEXT UNIQUE,
+            password_hash TEXT,
+            google_id TEXT
+        )
+    ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS transactions (
+            id TEXT PRIMARY KEY,
+            user_id TEXT,
+            date TEXT,
+            description TEXT,
+            category TEXT,
+            flow TEXT,
+            amount REAL,
+            reason TEXT,
+            tags TEXT
+        )
+    ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS pending_confirmations (
+            id TEXT PRIMARY KEY,
+            user_id TEXT,
+            date TEXT,
+            description TEXT,
+            flow TEXT,
+            amount REAL,
+            payee_name TEXT,
+            category TEXT,
+            reason TEXT,
+            tags TEXT
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+init_db()
+
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
+
+def get_db():
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row
+    return conn
 
 AUTO_MERCHANTS = [
     { 'name': 'Netflix', 'category': 'Bills', 'reason': 'Subscription', 'tags': ['Entertainment', 'Subscription'], 'match': ['netflix'] },
@@ -82,19 +140,9 @@ def generate_seed_transactions():
             lst.append({'id': f"seed-event-trip-2", 'date': '2026-05-15', 'description': 'MGM Grand Las Vegas Hotel', 'category': 'Entertainment', 'flow': 'expense', 'amount': 450.00, 'reason': 'Hotel Accommodation', 'tags': ['Entertainment', 'Vacation', 'Trip']})
 
     return sorted(lst, key=lambda x: x['date'], reverse=True)
-
-# Global State
-transactions = generate_seed_transactions()
-pending_confirmations = [
-    {
-        'id': 'p2p-pending-initial',
-        'date': datetime.now().strftime("%Y-%m-%d"),
-        'description': 'Payment to Mark Green',
-        'flow': 'expense',
-        'amount': 55.00,
-        'payee': 'Mark Green'
-    }
-]
+def seed_user_transactions(user_id):
+    # User requested new accounts to start completely blank.
+    pass
 
 def auto_classify_merchant(description):
     clean_desc = description.lower()
@@ -118,15 +166,111 @@ def check_is_p2p(description, flow):
     is_known = auto_classify_merchant(description) is not None
     return not is_known and (matches_keyword or matches_name)
 
+@app.route('/api/auth/signup', methods=['POST'])
+def signup():
+    data = request.json
+    name = data.get('name', 'User')
+    email = data.get('email')
+    password = data.get('password')
+    
+    if not email or not password:
+        return jsonify({'error': 'Email and password required'}), 400
+        
+    conn = get_db()
+    c = conn.cursor()
+    try:
+        user_id = str(uuid.uuid4())
+        c.execute('INSERT INTO users (id, name, email, password_hash) VALUES (?, ?, ?, ?)',
+                  (user_id, name, email, hash_password(password)))
+        conn.commit()
+        seed_user_transactions(user_id)
+    except sqlite3.IntegrityError:
+        conn.close()
+        return jsonify({'error': 'Email already exists'}), 409
+        
+    conn.close()
+    return jsonify({'status': 'success', 'user': {'id': user_id, 'name': name, 'email': email}})
+
+@app.route('/api/auth/login', methods=['POST'])
+def login():
+    data = request.json
+    email = data.get('email')
+    password = data.get('password')
+    
+    conn = get_db()
+    c = conn.cursor()
+    c.execute('SELECT id, name, email FROM users WHERE email = ? AND password_hash = ?', (email, hash_password(password)))
+    row = c.fetchone()
+    conn.close()
+    
+    if row:
+        return jsonify({'status': 'success', 'user': dict(row)})
+    else:
+        return jsonify({'error': 'Invalid credentials'}), 401
+
+@app.route('/api/auth/google', methods=['POST'])
+def google_auth():
+    data = request.json
+    email = data.get('email')
+    name = data.get('name', 'Google User')
+    
+    if not email:
+        return jsonify({'error': 'Email required'}), 400
+        
+    conn = get_db()
+    c = conn.cursor()
+    c.execute('SELECT id, name, email FROM users WHERE email = ?', (email,))
+    row = c.fetchone()
+    
+    if row:
+        user = dict(row)
+    else:
+        user_id = str(uuid.uuid4())
+        c.execute('INSERT INTO users (id, name, email, google_id) VALUES (?, ?, ?, ?)',
+                  (user_id, name, email, 'google'))
+        conn.commit()
+        seed_user_transactions(user_id)
+        user = {'id': user_id, 'name': name, 'email': email}
+        
+    conn.close()
+    return jsonify({'status': 'success', 'user': user})
+
 @app.route('/api/transactions', methods=['GET'])
 def get_transactions():
+    user_id = request.headers.get('X-User-Id')
+    if not user_id: return jsonify({'error': 'Unauthorized'}), 401
+    
+    conn = get_db()
+    c = conn.cursor()
+    c.execute('SELECT * FROM transactions WHERE user_id = ? ORDER BY date DESC', (user_id,))
+    tx_rows = c.fetchall()
+    c.execute('SELECT * FROM pending_confirmations WHERE user_id = ? ORDER BY date DESC', (user_id,))
+    pending_rows = c.fetchall()
+    conn.close()
+    
+    txs = []
+    for r in tx_rows:
+        d = dict(r)
+        d['tags'] = json.loads(d['tags']) if d['tags'] else []
+        txs.append(d)
+        
+    pends = []
+    for r in pending_rows:
+        d = dict(r)
+        d['tags'] = json.loads(d['tags']) if d['tags'] else []
+        d['payee'] = d['payee_name']
+        pends.append(d)
+        
     return jsonify({
-        'transactions': transactions,
-        'pendingConfirmations': pending_confirmations
+        'transactions': txs,
+        'pendingConfirmations': pends
     })
 
 @app.route('/api/transactions/simulate', methods=['POST'])
 def simulate_transaction():
+    user_id = request.headers.get('X-User-Id')
+    if not user_id: return jsonify({'error': 'Unauthorized'}), 401
+
     data = request.json
     desc = data.get('description', '')
     amount = float(data.get('amount', 0))
@@ -153,7 +297,16 @@ def simulate_transaction():
             'amount': amount,
             'payee': payee_name
         }
-        pending_confirmations.append(pending_obj)
+        
+        conn = get_db()
+        c = conn.cursor()
+        c.execute('''
+            INSERT INTO pending_confirmations (id, user_id, date, description, flow, amount, payee_name, category, reason, tags)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (new_tx_id, user_id, date_str, desc, direction, amount, payee_name, '', '', '[]'))
+        conn.commit()
+        conn.close()
+
         return jsonify({
             'status': 'needs_confirmation',
             'item': pending_obj,
@@ -190,7 +343,15 @@ def simulate_transaction():
             'tags': final_tags
         }
         
-        transactions.insert(0, confirmed_tx)
+        conn = get_db()
+        c = conn.cursor()
+        c.execute('''
+            INSERT INTO transactions (id, user_id, date, description, category, flow, amount, reason, tags)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (new_tx_id, user_id, date_str, desc, final_category, direction, amount, final_reason, json.dumps(final_tags)))
+        conn.commit()
+        conn.close()
+
         return jsonify({
             'status': 'auto_classified',
             'item': confirmed_tx,
@@ -199,23 +360,26 @@ def simulate_transaction():
 
 @app.route('/api/transactions/confirm', methods=['POST'])
 def confirm_transaction():
+    user_id = request.headers.get('X-User-Id')
+    if not user_id: return jsonify({'error': 'Unauthorized'}), 401
+
     data = request.json
     tx_id = data.get('id')
     category = data.get('category')
     reason = data.get('reason')
     tags = data.get('tags', [])
     
-    # Find pending
-    pending_item = None
-    for p in pending_confirmations:
-        if p['id'] == tx_id:
-            pending_item = p
-            break
-            
-    if not pending_item:
+    conn = get_db()
+    c = conn.cursor()
+    c.execute('SELECT * FROM pending_confirmations WHERE id = ? AND user_id = ?', (tx_id, user_id))
+    pending_row = c.fetchone()
+    
+    if not pending_row:
+        conn.close()
         return jsonify({'error': 'Not found'}), 404
         
-    pending_confirmations.remove(pending_item)
+    pending_item = dict(pending_row)
+    c.execute('DELETE FROM pending_confirmations WHERE id = ? AND user_id = ?', (tx_id, user_id))
     
     confirmed_tx = {
         'id': pending_item['id'],
@@ -228,7 +392,14 @@ def confirm_transaction():
         'tags': tags
     }
     
-    transactions.insert(0, confirmed_tx)
+    c.execute('''
+        INSERT INTO transactions (id, user_id, date, description, category, flow, amount, reason, tags)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (confirmed_tx['id'], user_id, confirmed_tx['date'], confirmed_tx['description'], category, confirmed_tx['flow'], confirmed_tx['amount'], reason, json.dumps(tags)))
+    
+    conn.commit()
+    conn.close()
+
     return jsonify({
         'status': 'success',
         'item': confirmed_tx
@@ -313,9 +484,19 @@ def upload_statement():
             }
             new_txs.append(tx_obj)
             
+        user_id = request.headers.get('X-User-Id')
+        if not user_id: return jsonify({'error': 'Unauthorized'}), 401
+
+        conn = get_db()
+        c = conn.cursor()
         if len(new_txs) > 0:
             for t in new_txs:
-                transactions.insert(0, t)
+                c.execute('''
+                    INSERT INTO transactions (id, user_id, date, description, category, flow, amount, reason, tags)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (t['id'], user_id, t['date'], t['description'], t['category'], t['flow'], t['amount'], t['reason'], json.dumps(t['tags'])))
+            conn.commit()
+        conn.close()
                 
         return jsonify({
             'status': 'success',

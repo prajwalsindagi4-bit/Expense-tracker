@@ -7,6 +7,16 @@ const API_BASE = window.location.hostname === 'localhost' || window.location.hos
     ? 'http://localhost:8000/api' 
     : '/api';
 
+function getAuthHeaders(baseHeaders = {}) {
+    const userStr = localStorage.getItem('user');
+    if (!userStr) {
+        window.location.href = 'login.html';
+        return baseHeaders;
+    }
+    const user = JSON.parse(userStr);
+    return { ...baseHeaders, 'X-User-Id': user.id };
+}
+
 async function fetchInitialData() {
     if (localStorage.getItem('hasDataUploaded') === 'false') {
         transactions = [];
@@ -15,7 +25,9 @@ async function fetchInitialData() {
     }
 
     try {
-        const response = await fetch(`${API_BASE}/transactions`);
+        const response = await fetch(`${API_BASE}/transactions`, {
+            headers: getAuthHeaders()
+        });
         const data = await response.json();
         transactions = data.transactions;
         pendingConfirmations = data.pendingConfirmations;
@@ -30,7 +42,7 @@ async function processNewFeedTransaction(desc, amount, direction) {
     try {
         const response = await fetch(`${API_BASE}/transactions/simulate`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
             body: JSON.stringify({
                 description: desc,
                 amount: amount,
@@ -52,7 +64,7 @@ async function confirmPendingTransaction(txId, category, reason, tags) {
     try {
         const response = await fetch(`${API_BASE}/transactions/confirm`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
             body: JSON.stringify({
                 id: txId,
                 category: category,
