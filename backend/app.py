@@ -18,9 +18,18 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app)
 
-url: str = os.environ.get("SUPABASE_URL")
-key: str = os.environ.get("SUPABASE_KEY")
-supabase: Client = create_client(url, key)
+url: str = os.environ.get("SUPABASE_URL", "")
+key: str = os.environ.get("SUPABASE_KEY", "")
+
+try:
+    supabase: Client = create_client(url, key)
+except Exception as e:
+    print(f"Failed to initialize Supabase: {e}")
+    supabase = None
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    return jsonify({"error": str(e), "type": type(e).__name__}), 500
 
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
