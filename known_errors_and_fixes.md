@@ -27,3 +27,10 @@
 - **The Solution**: Moved the `tokenClient` initialization out of the `DOMContentLoaded` event and into the button's `click` event handler. By lazily initializing it only when the button is clicked, we guarantee the Google script has finished downloading.
 - **The Impact**: The Google login button now works consistently on live deployed environments like Vercel, regardless of internet connection speeds.
 - **The Use Case**: Prevents the user interface from breaking for users on slower network connections who might click the login button before all external third-party scripts have fully loaded.
+
+## 3. Error 400: origin_mismatch (Google OAuth)
+- **The Error**: Google blocks the login attempt with `Error 400: origin_mismatch`.
+- **The Flow**: Developer pushes a new commit -> Vercel automatically generates a unique "preview branch" URL (e.g., `https://expense-tracker-git-main-prajwal11.vercel.app`) -> Developer tests Google Login on this preview URL -> Google checks the exact URL against the Authorized JavaScript origins list -> The preview URL is not on the list -> Google throws Error 400 and blocks the login.
+- **The Solution**: Either test the login button exclusively on the main production URL (`https://expense-tracker-prajwal11.vercel.app`) OR go back to the Google Cloud Console (APIs & Services > Credentials > Web Client) and add the specific Vercel preview URL to the Authorized JavaScript origins list.
+- **The Impact**: Aligns the Vercel branch preview deployment URLs with Google's strict security protocols, allowing OAuth testing on staging environments.
+- **The Use Case**: Essential for securely testing authentication flows on preview/staging branches before merging code into the main production branch.

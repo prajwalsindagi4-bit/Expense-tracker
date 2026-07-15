@@ -187,41 +187,111 @@ document.addEventListener('DOMContentLoaded', () => {
         creditCard.style.left = `calc(50vw - ${rect.width / 2}px)`;
 
         // After card reaches center → spin + zoom + fade
+        setTimeout(finishCardExit, 1100);
+    }
+
+    function finishCardExit() {
+        creditCard.style.transition = 'none';
+        void creditCard.offsetHeight;
+
+        // Animate the OUTER card for scale + opacity (no rotateY here)
+        const outerAnim = creditCard.animate([
+            { transform: 'scale(1)', opacity: 1, offset: 0 },
+            { transform: 'scale(1.5)', opacity: 1, offset: 0.3 },
+            { transform: 'scale(3)', opacity: 0.6, offset: 0.7 },
+            { transform: 'scale(5)', opacity: 0, offset: 1 }
+        ], {
+            duration: 3000,
+            easing: 'cubic-bezier(0.22, 0.6, 0.36, 1)',
+            fill: 'forwards'
+        });
+
+        // Animate the INNER card for rotateY spin (it has preserve-3d)
+        // If the card is currently flipped (showing email), start from 180deg
+        const startRot = isFlipped ? 180 : 0;
+        cardInner.animate([
+            { transform: `rotateY(${startRot}deg)`, offset: 0 },
+            { transform: `rotateY(${startRot + 360}deg)`, offset: 1 }
+        ], {
+            duration: 3000,
+            easing: 'cubic-bezier(0.22, 0.6, 0.36, 1)',
+            fill: 'forwards'
+        });
+
+        // Flash near the end
         setTimeout(() => {
-            creditCard.style.transition = 'none';
-            void creditCard.offsetHeight;
+            pageFlash.classList.add('active');
+        }, 2600);
 
-            // Animate the OUTER card for scale + opacity (no rotateY here)
-            const outerAnim = creditCard.animate([
-                { transform: 'scale(1)', opacity: 1, offset: 0 },
-                { transform: 'scale(1.5)', opacity: 1, offset: 0.3 },
-                { transform: 'scale(3)', opacity: 0.6, offset: 0.7 },
-                { transform: 'scale(5)', opacity: 0, offset: 1 }
-            ], {
-                duration: 3000,
-                easing: 'cubic-bezier(0.22, 0.6, 0.36, 1)',
-                fill: 'forwards'
+        // Redirect
+        setTimeout(() => {
+            window.location.href = 'link-upi.html';
+        }, 3000);
+    }
+
+    function typeText(element, text, speed, callback) {
+        element.textContent = '';
+        let i = 0;
+        function type() {
+            if (i < text.length) {
+                element.textContent += text.charAt(i);
+                i++;
+                setTimeout(type, speed);
+            } else if (callback) {
+                callback();
+            }
+        }
+        type();
+    }
+
+    function triggerGoogleCardExit(name, email) {
+        if (isFlipped) {
+            isFlipped = false;
+            cardInner.classList.remove('flipped');
+        }
+
+        // Clear existing text for the cool typing effect
+        cardHolderName.textContent = '';
+        emailValue.textContent = '';
+
+        const blackOverlay = document.getElementById('black-overlay');
+        const rect = creditCard.getBoundingClientRect();
+
+        document.body.appendChild(creditCard);
+
+        creditCard.style.cssText = `
+            position: fixed;
+            top: ${rect.top}px;
+            left: ${rect.left}px;
+            width: ${rect.width}px;
+            height: ${rect.height}px;
+            margin: 0;
+            z-index: 1000;
+            perspective: 1200px;
+        `;
+        void creditCard.offsetHeight;
+
+        authSide.classList.add('fade-exit');
+        blackOverlay.classList.add('active');
+
+        creditCard.style.transition = 'top 1s ease, left 1s ease';
+        creditCard.style.top = `calc(50vh - ${rect.height / 2}px)`;
+        creditCard.style.left = `calc(50vw - ${rect.width / 2}px)`;
+
+        // Wait for card to center, then type name
+        setTimeout(() => {
+            typeText(cardHolderName, name.toUpperCase(), 50, () => {
+                setTimeout(() => {
+                    isFlipped = true;
+                    cardInner.classList.add('flipped');
+                    // Wait for flip to complete
+                    setTimeout(() => {
+                        typeText(emailValue, email, 30, () => {
+                            setTimeout(finishCardExit, 800);
+                        });
+                    }, 600);
+                }, 400);
             });
-
-            // Animate the INNER card for rotateY spin (it has preserve-3d)
-            cardInner.animate([
-                { transform: 'rotateY(0deg)', offset: 0 },
-                { transform: 'rotateY(360deg)', offset: 1 }
-            ], {
-                duration: 3000,
-                easing: 'cubic-bezier(0.22, 0.6, 0.36, 1)',
-                fill: 'forwards'
-            });
-
-            // Flash near the end
-            setTimeout(() => {
-                pageFlash.classList.add('active');
-            }, 2600);
-
-            // Redirect
-            setTimeout(() => {
-                window.location.href = 'link-upi.html';
-            }, 3000);
         }, 1100);
     }
 
@@ -266,14 +336,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             })
                             .then(res => res.json())
                             .then(data => {
-                                if (data.name) cardHolderName.textContent = data.name.toUpperCase();
-                                if (data.email) emailValue.textContent = data.email;
-                                
-                                // Flip the card to show the email side briefly before exiting
-                                isFlipped = true;
-                                cardInner.classList.add('flipped');
-                                
-                                setTimeout(triggerCardExit, 1200);
+                                const name = data.name || 'YOUR NAME';
+                                const email = data.email || 'your@email.com';
+                                triggerGoogleCardExit(name, email);
                             })
                             .catch(err => {
                                 console.error('Failed to fetch user profile:', err);
