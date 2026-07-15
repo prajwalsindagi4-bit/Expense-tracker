@@ -66,3 +66,29 @@
   4. **Blank Slate Initialization**: Disabled the automatic mock data seeding so all newly registered users start with a clean, isolated $0.00 dashboard.
 - **The Impact**: Transactions are now 100% isolated and strictly bound to the specific user who created them. Data leakage between accounts is completely eliminated.
 - **The Use Case**: This is a mandatory security and functional requirement for any SaaS or personal finance application. It ensures data privacy, prevents unauthorized access to other people's finances, and allows the app to function correctly for multiple concurrent users.
+
+## 6. "'NoneType' object has no attribute 'table'" Error on Vercel
+- **The Error**: The application threw a "'NoneType' object has no attribute 'table'" error in an alert box on the live Vercel site.
+- **The Flow**: 
+  1. The backend application on Vercel attempts to initialize the Supabase client using environment variables (`SUPABASE_URL` and `SUPABASE_KEY`).
+  2. If these environment variables are missing in the Vercel project settings, the initialization fails, and the `supabase` object is set to `None`.
+  3. When an API endpoint is called (e.g., during login, signup, or fetching transactions), it attempts to execute `supabase.table(...)`.
+  4. Since `supabase` is `None`, Python raises the `AttributeError`, which is caught by the global error handler and sent to the frontend to be displayed.
+- **The Solution**: 
+  1. Added a `@app.before_request` hook in `backend/app.py` to check if `supabase` is `None` before processing any `/api/` request.
+  2. If `None`, the backend now proactively returns a clear `500` error with the message: "Database connection not configured. Please set SUPABASE_URL and SUPABASE_KEY environment variables."
+- **The Impact**: The application now gracefully handles missing environment variables. Instead of returning an obscure Python attribute error to the user, it provides a self-explanatory configuration error that informs the site administrator exactly how to fix the issue on Vercel.
+- **The Use Case**: Prevents confusion for developers or administrators deploying the app by clearly highlighting missing backend environment configuration rather than displaying generic server crashes to end-users.
+
+## 7. Row-Level Security (RLS) Policy Violation
+- **The Error**: The application threw a `{'message': 'new row violates row-level security policy for table "users"', 'code': '42501'}` error upon trying to sign up or log in.
+- **The Flow**: 
+  1. The backend application receives a signup request and tries to insert a new user record into the `users` table via `supabase.table('users').insert(...)`.
+  2. The application is configured with the `anon` (public) Supabase Key in `SUPABASE_KEY`.
+  3. Supabase tables have Row Level Security (RLS) enabled by default, which blocks all inserts, updates, and deletes from the `anon` role unless explicitly allowed via a policy.
+  4. The database rejects the query and returns a `42501` code.
+- **The Solution**: 
+  1. For backend services like this Flask app (which handles its own authentication and security independently), the `SUPABASE_KEY` environment variable should be set to the Supabase **Service Role Key** (found in Supabase Settings > API), rather than the **Anon Key**.
+  2. The Service Role Key intentionally bypasses RLS policies, allowing the trusted Python backend to manage users and transactions without database-level blocking.
+- **The Impact**: Backend database operations now succeed without being blocked by RLS policies. The application can register users and manage transaction data seamlessly.
+- **The Use Case**: Using a Service Role Key is the standard security architecture for a trusted backend server interacting with Supabase. It ensures the database remains locked down for direct client access while allowing full read/write capabilities for the authorized backend logic.

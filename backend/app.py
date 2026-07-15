@@ -31,6 +31,11 @@ except Exception as e:
 def handle_exception(e):
     return jsonify({"error": str(e), "type": type(e).__name__}), 500
 
+@app.before_request
+def check_supabase_connection():
+    if supabase is None and request.path.startswith('/api/'):
+        return jsonify({"error": "Database connection not configured. Please set SUPABASE_URL and SUPABASE_KEY environment variables."}), 500
+
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
