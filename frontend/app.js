@@ -1058,7 +1058,7 @@ function initScrollReveal() {
             // Stagger the visibility for a smooth cascade effect
             setTimeout(() => {
                 el.classList.add('visible');
-            }, i * 60);
+            }, i * 15);
         });
     }
 

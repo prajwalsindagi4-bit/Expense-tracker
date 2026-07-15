@@ -1,4 +1,25 @@
+let tokenClient;
+
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize Google Identity Services token client
+    if (window.google) {
+        tokenClient = google.accounts.oauth2.initTokenClient({
+            client_id: '422686211143-rdagfd33qg94le3qgpcshqcudbkqh85f.apps.googleusercontent.com',
+            scope: 'email profile',
+            callback: (tokenResponse) => {
+                if (tokenResponse && tokenResponse.access_token) {
+                    console.log('Successfully authenticated with Google!', tokenResponse);
+                    // Disable buttons and trigger the transition
+                    document.querySelectorAll('.btn-auth-social').forEach(b => {
+                        b.style.pointerEvents = 'none';
+                        b.style.opacity = '0.6';
+                    });
+                    setTimeout(triggerCardExit, 200);
+                }
+            },
+        });
+    }
+
     const cardInner = document.getElementById('credit-card-inner');
     const creditCard = document.getElementById('credit-card');
     const cardHolderName = document.getElementById('card-holder-name');
@@ -243,9 +264,14 @@ document.addEventListener('DOMContentLoaded', () => {
     socialBtns.forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.preventDefault();
-            btn.style.pointerEvents = 'none';
-            btn.style.opacity = '0.6';
-            setTimeout(triggerCardExit, 200);
+            
+            if (tokenClient) {
+                // Trigger the Google OAuth popup
+                tokenClient.requestAccessToken();
+            } else {
+                console.error('Google Identity Services not loaded.');
+                alert('Failed to load Google login. Please try again later.');
+            }
         });
     });
 });
