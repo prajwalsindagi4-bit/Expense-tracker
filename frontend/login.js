@@ -259,7 +259,26 @@ document.addEventListener('DOMContentLoaded', () => {
                                 b.style.pointerEvents = 'none';
                                 b.style.opacity = '0.6';
                             });
-                            setTimeout(triggerCardExit, 200);
+
+                            // Fetch user info using the access token
+                            fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                                headers: { Authorization: `Bearer ${tokenResponse.access_token}` }
+                            })
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data.name) cardHolderName.textContent = data.name.toUpperCase();
+                                if (data.email) emailValue.textContent = data.email;
+                                
+                                // Flip the card to show the email side briefly before exiting
+                                isFlipped = true;
+                                cardInner.classList.add('flipped');
+                                
+                                setTimeout(triggerCardExit, 1200);
+                            })
+                            .catch(err => {
+                                console.error('Failed to fetch user profile:', err);
+                                setTimeout(triggerCardExit, 200);
+                            });
                         }
                     },
                 });
