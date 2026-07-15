@@ -20,3 +20,10 @@
   - Users do not need to create, remember, or reset a new password just for this specific expense tracker application, which significantly increases user sign-up and retention rates.
   - The application offloads the heavy lifting of security, password hashing, and brute-force protection directly to Google's highly secure authentication infrastructure.
   - The application can reliably pull verified profile information (like the user's real name and email address) to personalize their financial dashboard immediately upon their first visit.
+
+## 2. "Failed to load Google login" Error on Vercel
+- **The Error**: The application threw a "Failed to load Google login. Please try again later." alert when clicking the Google button on the live Vercel site.
+- **The Flow**: User loads page -> `DOMContentLoaded` event fires -> Application immediately tries to initialize `tokenClient` using `window.google`, but the Google Identity Services script is still loading asynchronously over the network -> `window.google` is undefined, so `tokenClient` is skipped. When the user clicks the button, the app realizes `tokenClient` doesn't exist and throws the alert.
+- **The Solution**: Moved the `tokenClient` initialization out of the `DOMContentLoaded` event and into the button's `click` event handler. By lazily initializing it only when the button is clicked, we guarantee the Google script has finished downloading.
+- **The Impact**: The Google login button now works consistently on live deployed environments like Vercel, regardless of internet connection speeds.
+- **The Use Case**: Prevents the user interface from breaking for users on slower network connections who might click the login button before all external third-party scripts have fully loaded.
