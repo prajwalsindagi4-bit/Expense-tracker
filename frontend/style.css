@@ -793,8 +793,6 @@ input:checked + .switch-slider:before {
 
 .ledger-tr:hover {
     background: rgba(255,255,255,0.06);
-    transform: scale(1.01);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
 }
 
 .ledger-td { padding: 1rem; font-size: 0.9rem; vertical-align: middle; color: var(--text-secondary); }
