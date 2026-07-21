@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Known Errors and Fixes</title>
+<style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 40px auto; padding: 20px; }
+    h1, h2, h3 { color: #111; border-bottom: 1px solid #eee; padding-bottom: 8px; margin-top: 1.5em; }
+    code { background: #f4f4f4; padding: 2px 5px; border-radius: 4px; font-family: Consolas, monospace; font-size: 0.9em; }
+    pre { background: #f4f4f4; padding: 15px; border-radius: 6px; overflow-x: auto; }
+    pre code { background: none; padding: 0; }
+    ul { margin-bottom: 1.5em; }
+    li { margin-bottom: 0.5em; }
+    @media print {
+        body { margin: 0; padding: 0; max-width: 100%; }
+        @page { margin: 2cm; }
+        h2 { page-break-after: avoid; }
+    }
+</style>
+</head>
+<body>
+<h1>Known Errors and Fixes</h1>
+<h2>1. Google Login Button Not Working</h2>
+<ul>
+<li><strong>The Error</strong>: Google login failed. The application was using a placeholder Client ID (<code>YOUR_GOOGLE_CLIENT_ID_HERE</code>) for Google Identity Services. Google requires a real, registered Client ID to authorize logins and verify the requesting website.</li>
+<li><strong>The Flow</strong>: </li>
+<li>The user navigates to the login page and clicks the "Log in with Google" social authentication button.</li>
+<li>The frontend Javascript (<code>login.js</code>) triggers the Google Identity Services token client via <code>tokenClient.requestAccessToken()</code>.</li>
+<li>The request is sent to Google's OAuth 2.0 servers, passing the <code>client_id</code> defined in the code (which was the default placeholder string <code>YOUR_GOOGLE_CLIENT_ID_HERE</code>).</li>
+<li>Google's servers receive the request, but fail to find a registered application matching that placeholder ID in their database.</li>
+<li>Google immediately rejects the authentication attempt to prevent unauthorized data access, causing the login flow to abruptly fail without showing the user the Google account selection popup.</li>
+<li><strong>The Solution</strong>: </li>
+<li>Created a new project in the Google Cloud Console.</li>
+<li>Configured the OAuth Consent Screen.</li>
+<li>Created OAuth 2.0 Client credentials (Web application) and authorized the local and live URLs (<code>http://localhost</code> and <code>https://expense-tracker-prajwal11.vercel.app</code>).</li>
+<li>Replaced the placeholder string in <code>frontend/login.js</code> with the real Client ID.</li>
+<li>Removed the hardcoded validation block in <code>frontend/login.js</code> that was checking for the placeholder string.</li>
+<li><strong>The Impact</strong>: The Google login button now properly connects to Google Identity Services and can authorize real users seamlessly.</li>
+<li><strong>The Use Case</strong>: 
+  This setup is critical for modern web applications to provide a frictionless and secure user experience. By implementing Google Identity Services correctly:</li>
+<li>Users do not need to create, remember, or reset a new password just for this specific expense tracker application, which significantly increases user sign-up and retention rates.</li>
+<li>The application offloads the heavy lifting of security, password hashing, and brute-force protection directly to Google's highly secure authentication infrastructure.</li>
+<li>The application can reliably pull verified profile information (like the user's real name and email address) to personalize their financial dashboard immediately upon their first visit.</li>
+</ul>
+<h2>2. "Failed to load Google login" Error on Vercel</h2>
+<ul>
+<li><strong>The Error</strong>: The application threw a "Failed to load Google login. Please try again later." alert when clicking the Google button on the live Vercel site.</li>
+<li><strong>The Flow</strong>: User loads page -&gt; <code>DOMContentLoaded</code> event fires -&gt; Application immediately tries to initialize <code>tokenClient</code> using <code>window.google</code>, but the Google Identity Services script is still loading asynchronously over the network -&gt; <code>window.google</code> is undefined, so <code>tokenClient</code> is skipped. When the user clicks the button, the app realizes <code>tokenClient</code> doesn't exist and throws the alert.</li>
+<li><strong>The Solution</strong>: Moved the <code>tokenClient</code> initialization out of the <code>DOMContentLoaded</code> event and into the button's <code>click</code> event handler. By lazily initializing it only when the button is clicked, we guarantee the Google script has finished downloading.</li>
+<li><strong>The Impact</strong>: The Google login button now works consistently on live deployed environments like Vercel, regardless of internet connection speeds.</li>
+<li><strong>The Use Case</strong>: Prevents the user interface from breaking for users on slower network connections who might click the login button before all external third-party scripts have fully loaded.</li>
+</ul>
+<h2>3. Error 400: origin_mismatch (Google OAuth)</h2>
+<ul>
+<li><strong>The Error</strong>: Google blocks the login attempt with <code>Error 400: origin_mismatch</code>.</li>
+<li><strong>The Flow</strong>: Developer pushes a new commit -&gt; Vercel automatically generates a unique "preview branch" URL (e.g., <code>https://expense-tracker-git-main-prajwal11.vercel.app</code>) -&gt; Developer tests Google Login on this preview URL -&gt; Google checks the exact URL against the Authorized JavaScript origins list -&gt; The preview URL is not on the list -&gt; Google throws Error 400 and blocks the login.</li>
+<li><strong>The Solution</strong>: Either test the login button exclusively on the main production URL (<code>https://expense-tracker-prajwal11.vercel.app</code>) OR go back to the Google Cloud Console (APIs &amp; Services &gt; Credentials &gt; Web Client) and add the specific Vercel preview URL to the Authorized JavaScript origins list.</li>
+<li><strong>The Impact</strong>: Aligns the Vercel branch preview deployment URLs with Google's strict security protocols, allowing OAuth testing on staging environments.</li>
+<li><strong>The Use Case</strong>: Essential for securely testing authentication flows on preview/staging branches before merging code into the main production branch.</li>
+</ul>
+<h2>4. Lack of User Persistence and Backend Database</h2>
+<ul>
+<li><strong>The Error</strong>: The application lacked a real backend and database, meaning user accounts were entirely simulated. The browser would "forget" the user immediately after refreshing the page, and the Google Login button only triggered a visual animation without actually saving the user's data anywhere.</li>
+<li><strong>The Flow</strong>: </li>
+<li>The user manually signs up or logs in with Google.</li>
+<li>The frontend triggers the 3D card exit animation and redirects to the dashboard.</li>
+<li>Because the frontend didn't communicate with a backend or save any session state in the browser, the user was effectively anonymous.</li>
+<li>Upon refreshing the page, all context was lost, requiring the user to log in repeatedly.</li>
+<li><strong>The Solution</strong>: </li>
+<li><strong>Built a SQLite Database</strong>: Updated the Flask backend (<code>backend/app.py</code>) to initialize a <code>users.db</code> SQLite database with a <code>users</code> table to store IDs, names, emails, and hashed passwords securely.</li>
+<li><strong>Created Auth API Endpoints</strong>: Built three new HTTP POST endpoints on the backend (<code>/api/auth/signup</code>, <code>/api/auth/login</code>, and <code>/api/auth/google</code>) to handle user registration, credential verification, and OAuth bridging.</li>
+<li><strong>Connected the Frontend</strong>: Modified the form submission listeners in <code>frontend/login.js</code> to send HTTP requests to these new backend endpoints instead of instantly playing the animation.</li>
+<li><strong>Implemented LocalStorage Sessions</strong>: Instructed the frontend to save the securely verified user object (returned by the backend) into the browser's <code>localStorage</code> (<code>localStorage.setItem('user', JSON.stringify(data.user))</code>), allowing the browser to persistently remember the user across page reloads. The exit animation is now only triggered upon successful backend verification.</li>
+<li><strong>The Impact</strong>: The application now features robust, secure, and persistent user authentication. The browser reliably remembers the user across sessions, and Google Logins are tied to genuine database accounts rather than just being a visual effect.</li>
+<li><strong>The Use Case</strong>: This fundamental architectural shift guarantees that users can securely store their data and return to the application seamlessly without redundant logins. It establishes the foundational backend structure required to eventually assign personal, isolated financial transaction histories to each individual user.</li>
+</ul>
+<h2>5. Global Transaction State (Data Leakage Between Users)</h2>
+<ul>
+<li><strong>The Error</strong>: Transactions were stored in a global Python variable array in the backend (<code>transactions = []</code>), meaning every user who logged in saw the exact same dashboard and financial data. There was no isolation between different users' accounts.</li>
+<li><strong>The Flow</strong>: </li>
+<li>User A logs into their account on the frontend.</li>
+<li>The frontend sends a <code>GET /api/transactions</code> request.</li>
+<li>The backend returns the global <code>transactions</code> array. User A sees the data.</li>
+<li>User A simulates a new "Amazon Order". The backend adds it to the global array.</li>
+<li>User B logs into their entirely separate account.</li>
+<li>The frontend requests data, and User B sees User A's "Amazon Order" because the backend pulled from the exact same global memory.</li>
+<li><strong>The Solution</strong>: </li>
+<li><strong>Database Schema Upgrade</strong>: Modified the SQLite database to include new <code>transactions</code> and <code>pending_confirmations</code> tables, both containing a critical <code>user_id</code> column.</li>
+<li><strong>API Context Injection</strong>: Updated the frontend (<code>transactions.js</code>) to extract the currently logged-in user's ID from <code>localStorage</code> and inject it into the HTTP headers (<code>X-User-Id</code>) for every single API request.</li>
+<li><strong>Backend Filtering</strong>: Rewrote the backend API endpoints (<code>/api/transactions</code>, <code>/api/transactions/simulate</code>, etc.) to intercept the <code>X-User-Id</code> header and execute targeted SQL queries (e.g., <code>SELECT * FROM transactions WHERE user_id = ?</code>) instead of reading from global memory.</li>
+<li><strong>Blank Slate Initialization</strong>: Disabled the automatic mock data seeding so all newly registered users start with a clean, isolated $0.00 dashboard.</li>
+<li><strong>The Impact</strong>: Transactions are now 100% isolated and strictly bound to the specific user who created them. Data leakage between accounts is completely eliminated.</li>
+<li><strong>The Use Case</strong>: This is a mandatory security and functional requirement for any SaaS or personal finance application. It ensures data privacy, prevents unauthorized access to other people's finances, and allows the app to function correctly for multiple concurrent users.</li>
+</ul>
+<h2>6. "'NoneType' object has no attribute 'table'" Error on Vercel</h2>
+<ul>
+<li><strong>The Error</strong>: The application threw a "'NoneType' object has no attribute 'table'" error in an alert box on the live Vercel site.</li>
+<li><strong>The Flow</strong>: </li>
+<li>The backend application on Vercel attempts to initialize the Supabase client using environment variables (<code>SUPABASE_URL</code> and <code>SUPABASE_KEY</code>).</li>
+<li>If these environment variables are missing in the Vercel project settings, the initialization fails, and the <code>supabase</code> object is set to <code>None</code>.</li>
+<li>When an API endpoint is called (e.g., during login, signup, or fetching transactions), it attempts to execute <code>supabase.table(...)</code>.</li>
+<li>Since <code>supabase</code> is <code>None</code>, Python raises the <code>AttributeError</code>, which is caught by the global error handler and sent to the frontend to be displayed.</li>
+<li><strong>The Solution</strong>: </li>
+<li>Added a <code>@app.before_request</code> hook in <code>backend/app.py</code> to check if <code>supabase</code> is <code>None</code> before processing any <code>/api/</code> request.</li>
+<li>If <code>None</code>, the backend now proactively returns a clear <code>500</code> error with the message: "Database connection not configured. Please set SUPABASE_URL and SUPABASE_KEY environment variables."</li>
+<li><strong>The Impact</strong>: The application now gracefully handles missing environment variables. Instead of returning an obscure Python attribute error to the user, it provides a self-explanatory configuration error that informs the site administrator exactly how to fix the issue on Vercel.</li>
+<li><strong>The Use Case</strong>: Prevents confusion for developers or administrators deploying the app by clearly highlighting missing backend environment configuration rather than displaying generic server crashes to end-users.</li>
+</ul>
+<h2>7. Row-Level Security (RLS) Policy Violation</h2>
+<ul>
+<li><strong>The Error</strong>: The application threw a <code>{'message': 'new row violates row-level security policy for table "users"', 'code': '42501'}</code> error upon trying to sign up or log in.</li>
+<li><strong>The Flow</strong>: </li>
+<li>The backend application receives a signup request and tries to insert a new user record into the <code>users</code> table via <code>supabase.table('users').insert(...)</code>.</li>
+<li>The application is configured with the <code>anon</code> (public) Supabase Key in <code>SUPABASE_KEY</code>.</li>
+<li>Supabase tables have Row Level Security (RLS) enabled by default, which blocks all inserts, updates, and deletes from the <code>anon</code> role unless explicitly allowed via a policy.</li>
+<li>The database rejects the query and returns a <code>42501</code> code.</li>
+<li><strong>The Solution</strong>: </li>
+<li>For backend services like this Flask app (which handles its own authentication and security independently), the <code>SUPABASE_KEY</code> environment variable should be set to the Supabase <strong>Service Role Key</strong> (found in Supabase Settings &gt; API), rather than the <strong>Anon Key</strong>.</li>
+<li>The Service Role Key intentionally bypasses RLS policies, allowing the trusted Python backend to manage users and transactions without database-level blocking.</li>
+<li><strong>The Impact</strong>: Backend database operations now succeed without being blocked by RLS policies. The application can register users and manage transaction data seamlessly.</li>
+<li><strong>The Use Case</strong>: Using a Service Role Key is the standard security architecture for a trusted backend server interacting with Supabase. It ensures the database remains locked down for direct client access while allowing full read/write capabilities for the authorized backend logic.</li>
+</ul>
+<h2>5. All Tabs Blank Except Analytics (Cascade JS Failure)</h2>
+<ul>
+<li><strong>The Error</strong>: Every tab in the app (Dashboard, Transactions, Budget, AI Insights, Settings) appeared completely blank/invisible. Only the Analytics (Spendings) tab displayed content.</li>
+<li><strong>The Flow</strong>:</li>
+<li>On page load, <code>DOMContentLoaded</code> calls <code>fetchInitialData()</code>, then <code>initApp()</code>, then <code>initScrollReveal()</code>.</li>
+<li>Inside <code>initApp()</code>, the function <code>initSandboxChart()</code> is called. This function does <code>document.getElementById('sandboxChart').getContext('2d')</code> — but the <code>#sandboxChart</code> canvas element was previously removed from <code>index.html</code>.</li>
+<li>This throws <code>TypeError: Cannot read properties of null (reading 'getContext')</code>, which crashes <code>initApp()</code> entirely.</li>
+<li>Because <code>initApp()</code> crashes, control never returns to the <code>DOMContentLoaded</code> handler, so <code>initScrollReveal()</code> on the next line <strong>never runs</strong>.</li>
+<li>All content cards in the app use CSS classes <code>.reveal</code>, <code>.reveal-left</code>, <code>.reveal-scale</code> which start at <code>opacity: 0</code> via CSS. The <code>initScrollReveal()</code> function is responsible for adding the <code>.visible</code> class (which sets <code>opacity: 1</code>) via an IntersectionObserver.</li>
+<li>Without <code>initScrollReveal()</code>, the <code>.visible</code> class is never added, so all cards remain invisible at <code>opacity: 0</code>.</li>
+<li>The Analytics tab worked because <code>renderSpendings()</code> generates its own HTML dynamically without relying on <code>.reveal</code> classes.</li>
+<li><strong>The Solution</strong>:</li>
+<li>Added a null guard inside <code>initSandboxChart()</code>: <code>const canvas = document.getElementById('sandboxChart'); if (!canvas) return;</code></li>
+<li>Added null guards inside <code>updateSandboxValues()</code> for all slider and value display elements.</li>
+<li>Wrapped <code>initApp()</code> in a try-catch in the <code>DOMContentLoaded</code> handler so that <code>initScrollReveal()</code> always runs even if <code>initApp()</code> throws.</li>
+<li><strong>The Impact</strong>: All tabs (Dashboard, Transactions, Budget, AI Insights, Settings) now render their content correctly. The reveal animations work and cards are visible.</li>
+<li><strong>The Use Case</strong>: This fix ensures frontend resilience — a single missing DOM element or removed feature no longer crashes the entire initialization pipeline. The try-catch acts as a safety net so critical functions like scroll-reveal always initialize.</li>
+</ul>
+<h2>6. The API Trust Loophole (X-User-Id Vulnerability)</h2>
+<ul>
+<li><strong>The Error</strong>: The application relied on the frontend explicitly declaring who was making a request by passing a custom <code>X-User-Id</code> HTTP header. </li>
+<li><strong>The Flow</strong>: </li>
+<li>Frontend logs in and stores the user's UUID in <code>localStorage</code>.</li>
+<li>Frontend sends <code>X-User-Id: &lt;UUID&gt;</code> on all subsequent requests to the backend.</li>
+<li>The backend blindly trusts this UUID and executes database queries, assuming the UUID is genuine.</li>
+<li>A malicious user could intercept requests and spoof another user's UUID in the header to view or manipulate their financial data.</li>
+<li><strong>The Solution</strong>: </li>
+<li>Implemented <strong>JSON Web Tokens (JWT)</strong>.</li>
+<li>Updated the <code>app.py</code> authentication endpoints (<code>/api/auth/login</code>, <code>/signup</code>, <code>/google</code>) to generate cryptographically signed JWTs containing the <code>user_id</code>, using the <code>PyJWT</code> library and a secret key.</li>
+<li>Created a <code>@token_required</code> Python decorator in <code>app.py</code> to intercept incoming requests, mathematically verify the JWT signature, and strictly extract the genuine <code>user_id</code> from the payload rather than relying on unverified headers.</li>
+<li>Updated <code>frontend/login.js</code> to store the generated token and updated <code>app.js</code> and <code>transactions.js</code> to transmit it via the standard <code>Authorization: Bearer &lt;token&gt;</code> header.</li>
+<li><strong>The Impact</strong>: Users can no longer forge their identity. Data is strictly isolated and cryptographic proof of authentication is required for all state-modifying requests.</li>
+<li><strong>The Use Case</strong>: Ensures total data privacy and strictly adheres to modern authentication security standards.</li>
+</ul>
+<h2>7. Weak Password Hashing (Rainbow Table Vulnerability)</h2>
+<ul>
+<li><strong>The Error</strong>: Passwords were natively hashed using simple <code>SHA-256</code> without salting, leaving the database vulnerable to Rainbow Table decryption attacks if a breach were to occur.</li>
+<li><strong>The Flow</strong>: </li>
+<li>A user enters their password 'password123'.</li>
+<li>The backend generates a static <code>SHA-256</code> hash and saves it.</li>
+<li>Because the algorithm was deterministic and unsalted, identical passwords resulted in identical hashes, making decryption mathematically trivial for attackers.</li>
+<li><strong>The Solution</strong>: </li>
+<li>Migrated the backend hashing engine to <code>bcrypt</code>.</li>
+<li>Updated <code>hash_password</code> in <code>app.py</code> to utilize <code>bcrypt.gensalt()</code> dynamically, guaranteeing that no two hashes are ever identical, even for identical passwords.</li>
+<li>Implemented a dual-check fallback system within <code>/api/auth/login</code>. When legacy users log in, the system compares their input against the old <code>SHA-256</code> hash. If it matches, the backend transparently auto-upgrades their database record to a <code>bcrypt</code> hash without requiring a password reset.</li>
+<li><strong>The Impact</strong>: Prevents database leaks from instantly compromising user credentials and allows for a seamless security upgrade for all existing accounts.</li>
+<li><strong>The Use Case</strong>: Password hashing now meets strict security and cryptography compliance models.</li>
+</ul>
+<h2>8. Dashboard Math Hardcoding (Static Net Worth)</h2>
+<ul>
+<li><strong>The Error</strong>: The "Net Wealth Built" number on the dashboard artificially started at ₹42,650 plus the difference between just the currently viewed month's income and expense, leading to highly inaccurate wealth tracking.</li>
+<li><strong>The Flow</strong>: </li>
+<li>The user uploads massive transaction histories.</li>
+<li><code>app.js</code> runs <code>updateDashboardUI()</code> and forces the baseline Net Worth calculation to begin at ₹42,650 regardless of the data.</li>
+<li><strong>The Solution</strong>: </li>
+<li>Removed the hardcoded values from the <code>dynamicNetWorth</code> calculation in <code>app.js</code>.</li>
+<li>Rewrote the logic to run a <code>reduce</code> summation across ALL historical <code>transactions</code> loaded in memory, aggregating lifetime <code>income</code> and subtracting lifetime <code>expense</code>.</li>
+<li>Re-established a lower ₹40,000 baseline offset to avoid negative balances during testing.</li>
+<li><strong>The Impact</strong>: The dashboard now properly reflects the cumulative historical financial trends of the user's specific dataset dynamically.</li>
+<li><strong>The Use Case</strong>: Gives the user a much more accurate sense of financial progression rather than displaying a static hardcoded number.</li>
+</ul>
+<h2>9. Unvalidated CSV Upload Stream (Crash Vector)</h2>
+<ul>
+<li><strong>The Error</strong>: The <code>/api/upload-statement</code> endpoint blindly read the entire incoming file stream into memory without verifying its size or type.</li>
+<li><strong>The Flow</strong>: </li>
+<li>A user, or a malicious script, uploads an enormous 5GB file or an executable program.</li>
+<li>The Python backend blindly attempts to buffer the entire stream into RAM and parse it, crashing the server due to an out-of-memory exception.</li>
+<li><strong>The Solution</strong>: </li>
+<li>Added a strict MIME-type and extension check in <code>app.py</code> to ensure only <code>.csv</code> files are processed.</li>
+<li>Bound the maximum readable byte limit of the incoming request stream strictly to 5MB (<code>file.read(5 * 1024 * 1024)</code>). If the payload exceeds this, the connection is instantly rejected with a <code>400 Bad Request</code>.</li>
+<li><strong>The Impact</strong>: The server is now highly resilient against malicious uploads, OOM (Out Of Memory) crashes, and incorrect data processing.</li>
+<li><strong>The Use Case</strong>: Ensures the application's uptime remains unaffected even in extreme usage or deliberate attacks.</li>
+</ul>
+<h2>10. Cross-Site Scripting (XSS) via CSV Injection</h2>
+<ul>
+<li><strong>The Error</strong>: The frontend directly injected user-controlled data (descriptions, payees) into the DOM using <code>.innerHTML</code> without escaping HTML entities.</li>
+<li><strong>The Flow</strong>: </li>
+<li>A user uploads a malicious CSV file containing <code>&lt;script&gt;</code> tags in the description field.</li>
+<li>The backend accepts and stores the transaction.</li>
+<li>The frontend retrieves the data and injects it into <code>.innerHTML</code> strings in <code>renderLedger()</code> and other rendering functions.</li>
+<li>The browser executes the malicious JavaScript payload in the victim's session.</li>
+<li><strong>The Solution</strong>: </li>
+<li>Implemented a robust <code>escapeHTML()</code> sanitization function at the top of <code>app.js</code>.</li>
+<li>Wrapped every dynamic user-input string inside template literals with <code>escapeHTML()</code> before it is injected into the DOM.</li>
+<li><strong>The Impact</strong>: Malicious tags are now safely rendered as plain text, eliminating the risk of XSS payload execution.</li>
+<li><strong>The Use Case</strong>: Protects the application against client-side script injection attacks originating from compromised or deliberately malicious CSV data.</li>
+</ul>
+<h2>11. Brute-Force Vulnerability on Login (No Rate Limiting)</h2>
+<ul>
+<li><strong>The Error</strong>: The <code>/api/auth/login</code> endpoint allowed unlimited consecutive requests.</li>
+<li><strong>The Flow</strong>: </li>
+<li>An attacker sets up an automated bot script.</li>
+<li>The script spams the login endpoint with thousands of password guesses per minute against a targeted email address.</li>
+<li>The server processes all requests, eventually yielding the correct password.</li>
+<li><strong>The Solution</strong>: </li>
+<li>Installed <code>Flask-Limiter</code>.</li>
+<li>Integrated <code>Limiter(get_remote_address, app=app)</code> into <code>app.py</code>.</li>
+<li>Placed a strict <code>@limiter.limit('5 per minute')</code> decorator specifically on the <code>/api/auth/login</code> endpoint.</li>
+<li><strong>The Impact</strong>: Attack scripts are instantly throttled and blocked after 5 failed attempts per minute, making brute-force guessing mathematically infeasible, while remaining invisible to normal users.</li>
+<li><strong>The Use Case</strong>: Defends user accounts against credential stuffing and automated password cracking attacks.</li>
+</ul>
+<h2>12. Insecure JWT Secret Fallback in Production</h2>
+<ul>
+<li><strong>The Error</strong>: The backend authentication system silently fell back to a hardcoded, public string (<code>"super-secret-key-fallback"</code>) if the <code>JWT_SECRET</code> environment variable was accidentally omitted.</li>
+<li><strong>The Flow</strong>: </li>
+<li>The server boots up in production but <code>.env</code> was misconfigured or missing.</li>
+<li>The application silently boots using the hardcoded string.</li>
+<li>An attacker who has read the source code discovers this string, uses it to sign their own JWT tokens, and grants themselves administrative access to any user account.</li>
+<li><strong>The Solution</strong>: </li>
+<li>Rewrote the <code>SECRET_KEY</code> assignment in <code>app.py</code>.</li>
+<li>Added an aggressive exception block: if <code>JWT_SECRET</code> is missing and the environment is not <code>development</code>, the application will instantly raise a <code>ValueError</code> and refuse to boot.</li>
+<li><strong>The Impact</strong>: It is now impossible for the application to silently enter a compromised state in production due to a misconfigured environment variable.</li>
+<li><strong>The Use Case</strong>: Enforces fail-safe secure configuration by design.</li>
+</ul>
+<h2>13. Broken Access Control (IDOR) on Account Deletion &amp; Modifications</h2>
+<ul>
+<li><strong>The Error</strong>: The <code>/api/auth/delete-account</code> endpoint completely bypassed JWT session verification and accepted any <code>email</code> string in the request body to execute a hard-delete.</li>
+<li><strong>The Flow</strong>: </li>
+<li>A malicious user sends an unauthenticated POST request to <code>/api/auth/delete-account</code> with the JSON payload <code>{"email": "victim@gmail.com"}</code>.</li>
+<li>The server receives the request, queries the database for the victim's email, and executes a cascading <code>delete()</code> on their transactions, AI feedback, pending confirmations, and user profile.</li>
+<li><strong>The Solution</strong>: </li>
+<li>Wrapped the <code>/api/auth/delete-account</code> and <code>/api/auth/change-password</code> routes with the strict <code>@token_required</code> decorator.</li>
+<li>Refactored the endpoint logic to permanently ignore incoming <code>email</code> fields in the JSON body, and instead strictly use the <code>user_id</code> mathematically extracted from the verified cryptographic JWT token.</li>
+<li><strong>The Impact</strong>: Users can strictly only delete or modify their own accounts while actively logged into a valid session.</li>
+<li><strong>The Use Case</strong>: Closes a catastrophic IDOR vulnerability that would have allowed arbitrary account wiping across the platform.</li>
+</ul>
+<h2>14. Broken Access Control on CSV Uploads</h2>
+<ul>
+<li><strong>The Error</strong>: The <code>/api/upload-statement</code> endpoint missed the JWT security decorator due to structural code mismatches, leaving it totally unauthenticated and un-throttled.</li>
+<li><strong>The Flow</strong>: </li>
+<li>An attacker blasts the public <code>/api/upload-statement</code> URL with massive multipart-form data containing 10GB fake files.</li>
+<li>The server attempts to buffer the data into RAM, triggering a catastrophic Out Of Memory (OOM) crash.</li>
+<li><strong>The Solution</strong>: </li>
+<li>Applied the <code>@token_required</code> decorator to strictly authenticate the upload stream.</li>
+<li>Implemented a hard 5MB read cutoff (<code>file.read(5 * 1024 * 1024)</code>) and enforced a <code>.csv</code> MIME-type extension check before parsing.</li>
+<li><strong>The Impact</strong>: Malicious or oversized files are instantly rejected with a 400 error before consuming server memory, and only authenticated users can upload data.</li>
+<li><strong>The Use Case</strong>: Secures the server against DOS (Denial of Service) via OOM crashing.</li>
+</ul>
+<h2>15. Immortal JWT Tokens</h2>
+<ul>
+<li><strong>The Error</strong>: The backend generated JSON Web Tokens (JWT) for authentication without an expiration date (<code>exp</code> claim).</li>
+<li><strong>The Flow</strong>: </li>
+<li>A user logs in and receives a token.</li>
+<li>Because the token lacks an <code>exp</code> field, it never automatically expires.</li>
+<li>If a malicious actor intercepts this token, they have permanent access to the victim's account unless the server's master <code>JWT_SECRET</code> is rotated.</li>
+<li><strong>The Solution</strong>: </li>
+<li>Modified the <code>jwt.encode</code> logic in <code>app.py</code> across all login and signup routes.</li>
+<li>Injected <code>'exp': datetime.utcnow() + timedelta(hours=24)</code> into the token payload.</li>
+<li><strong>The Impact</strong>: All issued tokens now self-destruct exactly 24 hours after generation, massively shrinking the window of opportunity for hijacked session attacks.</li>
+<li><strong>The Use Case</strong>: Enforces standard session lifecycle security.</li>
+</ul>
+<h2>16. Unhandled Session Expiry (Silent UI Freezing)</h2>
+<ul>
+<li><strong>The Error</strong>: The frontend had no global error handling for API rejections when a session token expires.</li>
+<li><strong>The Flow</strong>: </li>
+<li>A user's token expires after 24 hours.</li>
+<li>The user attempts to refresh their dashboard or add a transaction.</li>
+<li>The API rejects the request with <code>401 Unauthorized</code>.</li>
+<li>The frontend blindly awaits the data, throwing an unhandled Promise Rejection in the console, resulting in the UI freezing silently.</li>
+<li><strong>The Solution</strong>: </li>
+<li>Built a global <code>fetch</code> interceptor at the top of <code>app.js</code>.</li>
+<li>The wrapper catches any <code>401</code> response that isn't from the login routes.</li>
+<li>When detected, it instantly wipes the stale <code>localStorage</code> data, throws a browser alert, and forcefully redirects the user back to <code>login.html</code>.</li>
+<li><strong>The Impact</strong>: Users experience a graceful, intuitive logout rather than a broken, frozen webpage when their session hits the 24-hour mark.</li>
+<li><strong>The Use Case</strong>: Ensures a robust user experience and prevents stale, unauthenticated application states.</li>
+</ul>
+</body>
+</html>
