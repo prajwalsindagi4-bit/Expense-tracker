@@ -41,9 +41,11 @@ function initApp() {
             filterButtons.forEach(b => {
                 b.style.background = 'rgba(255, 255, 255, 0.05)';
                 b.style.borderColor = 'var(--border-color)';
+                b.classList.remove('active');
             });
             btn.style.background = 'rgba(99, 102, 241, 0.15)';
             btn.style.borderColor = 'rgba(99, 102, 241, 0.35)';
+            btn.classList.add('active');
             
             const filterValue = btn.getAttribute('data-filter');
             renderLedger(filterValue);
@@ -53,7 +55,8 @@ function initApp() {
     // 4. Search input search
     const searchInput = document.getElementById('tx-search-input');
     searchInput.addEventListener('input', () => {
-        renderLedger('all', searchInput.value.toLowerCase());
+        const currentFilter = document.querySelector('#tx-filter-container .active')?.getAttribute('data-filter') || 'all';
+        renderLedger(currentFilter, searchInput.value.toLowerCase());
     });
 
     // 5. Open/Close Simulator Modals

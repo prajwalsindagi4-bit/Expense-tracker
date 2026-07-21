@@ -471,7 +471,6 @@ input:checked + .switch-slider:before {
         inset 0 1px 1px rgba(255,255,255,0.15),
         0 0 60px rgba(255,255,255,0.03),
         0 0 100px rgba(255,255,255,0.015);
-    transform: translateY(-6px);
 }
 
 /* ════════ GRIDS ════════ */
@@ -1637,7 +1636,6 @@ body:hover .cursor-glow {
 }
 
 .card:hover {
-    transform: translateY(-8px) translateZ(20px) scale(1.01);
     box-shadow:
         /* Close shadow - sharp */
         0 4px 8px rgba(0, 0, 0, 0.4),
