@@ -3,6 +3,7 @@
 let wealthChartInstance = null;
 let outflowChartInstance = null;
 let sandboxChartInstance = null;
+let budgetPieChartInstance = null;
 
 // Track selected category & reason inside the P2P confirmation flow
 let selectedConfirmCategory = null;
@@ -332,14 +333,79 @@ function initDashboardCharts(thisMonthTxs) {
             }
         }
     });
+
+    // B. Budget Allocation Pie Chart
+    const pieCtx = document.getElementById('budgetPieChart');
+    if (pieCtx) {
+        const pieCtx2d = pieCtx.getContext('2d');
+        if (budgetPieChartInstance) budgetPieChartInstance.destroy();
+
+        const categoryTotals = {};
+        thisMonthTxs.forEach(t => {
+            if (t.flow === 'expense') {
+                const cat = t.category || 'Miscellaneous';
+                categoryTotals[cat] = (categoryTotals[cat] || 0) + parseFloat(t.amount);
+            }
+        });
+
+        let labels = Object.keys(categoryTotals);
+        let data = Object.values(categoryTotals);
+        if (labels.length === 0) {
+            labels = ['Awaiting Data'];
+            data = [100];
+        }
+
+        budgetPieChartInstance = new Chart(pieCtx2d, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: [
+                        '#c084fc', '#38bdf8', '#34d399', '#fbbf24', 
+                        '#f87171', '#818cf8', '#a78bfa', '#f472b6', '#94a3b8'
+                    ],
+                    borderWidth: 1,
+                    borderColor: 'rgba(255,255,255,0.1)',
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '70%',
+                plugins: { 
+                    legend: { 
+                        position: 'right',
+                        labels: { color: '#ffffff', font: { size: 11, family: 'Inter' }, padding: 15, usePointStyle: true, boxWidth: 8 }
+                    } 
+                }
+            }
+        });
+    }
 }
 // Budget Planner — standalone function for the Budget tab
+const BUDGET_PRESETS = {
+    '50-30-20': [
+        { name: 'Needs', pct: 50, txCategories: ['Rent', 'Bills', 'Utilities', 'Grocery'], flow: 'expense' },
+        { name: 'Wants', pct: 30, txCategories: ['Food', 'Travel', 'Shopping'], flow: 'expense' },
+        { name: 'Savings & Investments', pct: 20, txCategories: ['Investments'], flow: 'investment' }
+    ],
+    '70-20-10': [
+        { name: 'Living Expenses', pct: 70, txCategories: ['Rent', 'Bills', 'Utilities', 'Grocery', 'Food', 'Travel', 'Shopping'], flow: 'expense' },
+        { name: 'Savings & Investments', pct: 20, txCategories: ['Investments'], flow: 'investment' },
+        { name: 'Debt Repayment', pct: 10, txCategories: ['Debt'], flow: 'expense' }
+    ],
+    'zero-based': [
+        { name: 'Housing & Utilities', pct: 35, txCategories: ['Rent', 'Bills', 'Utilities'], flow: 'expense' },
+        { name: 'Food & Groceries', pct: 15, txCategories: ['Grocery', 'Food'], flow: 'expense' },
+        { name: 'Transportation & Misc', pct: 15, txCategories: ['Travel', 'Shopping'], flow: 'expense' },
+        { name: 'Savings & Investments', pct: 35, txCategories: ['Investments'], flow: 'investment' }
+    ]
+};
+
 // Default budget categories with their transaction category mappings
-let budgetCategories = [
-    { name: 'Needs', pct: 50, txCategories: ['Rent', 'Bills', 'Utilities', 'Grocery'], flow: 'expense' },
-    { name: 'Wants', pct: 30, txCategories: ['Food', 'Travel', 'Shopping'], flow: 'expense' },
-    { name: 'Savings & Investments', pct: 20, txCategories: ['Investments'], flow: 'investment' },
-];
+let budgetCategories = JSON.parse(JSON.stringify(BUDGET_PRESETS['50-30-20']));
 
 function renderBudgetComparison() {
     const allTxs = transactions;
@@ -372,12 +438,18 @@ function renderBudgetComparison() {
             list.appendChild(row);
         });
 
+        const markCustom = () => {
+            const dropdown = document.getElementById('budget-rule-preset');
+            if (dropdown) dropdown.value = 'custom';
+        };
+
         // Attach live percentage change listeners
         list.querySelectorAll('.budget-cat-pct').forEach(input => {
             input.addEventListener('input', (e) => {
                 const idx = parseInt(e.target.dataset.idx);
                 budgetCategories[idx].pct = parseFloat(e.target.value) || 0;
                 updatePctIndicator();
+                markCustom();
             });
         });
 
@@ -386,6 +458,7 @@ function renderBudgetComparison() {
             input.addEventListener('input', (e) => {
                 const idx = parseInt(e.target.dataset.idx);
                 budgetCategories[idx].name = e.target.value;
+                markCustom();
             });
         });
 
@@ -396,6 +469,7 @@ function renderBudgetComparison() {
                 budgetCategories.splice(idx, 1);
                 renderCategoryRows();
                 updatePctIndicator();
+                markCustom();
             });
         });
 
@@ -493,6 +567,24 @@ function renderBudgetComparison() {
             });
             renderCategoryRows();
             updatePctIndicator();
+            const dropdown = document.getElementById('budget-rule-preset');
+            if (dropdown) dropdown.value = 'custom';
+        });
+    }
+
+    // Budget Rule Preset Dropdown
+    const presetSelect = document.getElementById('budget-rule-preset');
+    if (presetSelect) {
+        const newPresetSelect = presetSelect.cloneNode(true);
+        presetSelect.parentNode.replaceChild(newPresetSelect, presetSelect);
+        newPresetSelect.addEventListener('change', (e) => {
+            const val = e.target.value;
+            if (val !== 'custom' && BUDGET_PRESETS[val]) {
+                budgetCategories = JSON.parse(JSON.stringify(BUDGET_PRESETS[val]));
+                renderCategoryRows();
+                updatePctIndicator();
+                renderBudgetTable();
+            }
         });
     }
 

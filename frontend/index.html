@@ -54,11 +54,6 @@
                     </a>
                 </li>
                 <li>
-                    <a class="nav-item" data-target="split-expenses">
-                        <span>Split</span>
-                    </a>
-                </li>
-                <li>
                     <a class="nav-item" data-target="opportunities">
                         <span>AI Insights</span>
                     </a>
@@ -293,10 +288,16 @@
 
             <!-- Visual Charts -->
             <div class="dashboard-grid">
-                <div class="card col-12 reveal-scale">
+                <div class="card col-7 reveal-scale">
                     <h3 class="stat-label">Wealth Development Trend</h3>
                     <div style="height: 260px; position: relative;">
                         <canvas id="wealthTrendChart"></canvas>
+                    </div>
+                </div>
+                <div class="card col-5 reveal-scale">
+                    <h3 class="stat-label">Budget Allocation</h3>
+                    <div style="height: 260px; position: relative; display: flex; align-items: center; justify-content: center;">
+                        <canvas id="budgetPieChart"></canvas>
                     </div>
                 </div>
             </div>
@@ -459,7 +460,17 @@
 
             <div class="dashboard-grid">
                 <div class="card col-12 reveal-scale" id="budget-comparison-card" data-no-tilt>
-                    <h3 class="stat-label">Custom Budget Strategy & Comparison</h3>
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                        <h3 class="stat-label" style="margin: 0;">Budget Strategy & Comparison</h3>
+                        <div>
+                            <select id="budget-rule-preset" class="form-input" style="padding: 0.4rem 0.75rem; font-size: 0.9rem; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 4px; outline: none; min-width: 180px;">
+                                <option value="50-30-20" selected>50/30/20 Rule</option>
+                                <option value="70-20-10">70/20/10 Rule</option>
+                                <option value="zero-based">Zero-Based Budget</option>
+                                <option value="custom">Custom</option>
+                            </select>
+                        </div>
+                    </div>
                     
                     <!-- Total Budget -->
                     <div style="display: flex; gap: 1.5rem; margin-top: 1.25rem; flex-wrap: wrap; align-items: flex-end; background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 8px;">
@@ -502,70 +513,6 @@
                 </div>
             </div>
         </section> <!-- close #sandbox -->
-
-        <!-- SPLIT EXPENSES TAB -->
-        <section id="split-expenses" class="page-section">
-            <div class="page-hero-text" data-text="Split">Split</div>
-            <header>
-                <div>
-                    <h1 class="page-title">Split Expenses</h1>
-                    <p class="subtitle">Resolve shared checks, loans, and P2P payments seamlessly.</p>
-                </div>
-            </header>
-
-            <!-- Human Confirmation Area -->
-            <div class="confirmation-section" id="confirmation-inbox" style="display: none;">
-                <div class="confirm-card">
-                    <div class="confirm-header">
-                        <span class="confirm-alert-title">
-                            <i data-lucide="help-circle"></i> Human Context Required
-                        </span>
-                        <span class="hint-text">P2P payments require manual category check</span>
-                    </div>
-                    <div id="confirmation-pending-list" style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
-                        <!-- confirmation items will load here -->
-                    </div>
-                </div>
-            </div>
-
-            <div class="dashboard-grid">
-                <div class="card col-6">
-                    <h3 class="stat-label">Active Friend Groups</h3>
-                    <div style="display:flex; flex-direction:column; gap:1.25rem; margin-top: 1rem;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; padding: 0.75rem 1rem; background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); border-radius: 12px;">
-                            <div style="display:flex; align-items:center; gap:0.75rem;">
-                                <div class="stat-icon purple" style="width: 36px; height: 36px; font-size: 0.9rem;"><i data-lucide="users"></i></div>
-                                <div>
-                                    <div style="font-weight:500; font-size:0.9rem;">Sarah Connor (Dinner group)</div>
-                                    <div style="font-size:0.75rem; color:var(--text-muted);">Last split: 3 days ago</div>
-                                </div>
-                            </div>
-                            <span style="color:var(--danger); font-family:var(--font-heading); font-size:0.9rem; font-weight:500;">You owe ₹35.00</span>
-                        </div>
-                        <div style="display:flex; justify-content:space-between; align-items:center; padding: 0.75rem 1rem; background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); border-radius: 12px;">
-                            <div style="display:flex; align-items:center; gap:0.75rem;">
-                                <div class="stat-icon green" style="width: 36px; height: 36px; font-size: 0.9rem;"><i data-lucide="users"></i></div>
-                                <div>
-                                    <div style="font-weight:500; font-size:0.9rem;">Mark Green (Roommates)</div>
-                                    <div style="font-size:0.75rem; color:var(--text-muted);">Monthly Utilities</div>
-                                </div>
-                            </div>
-                            <span style="color:var(--success); font-family:var(--font-heading); font-size:0.9rem; font-weight:500;">Owes you ₹55.00</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card col-6">
-                    <h3 class="stat-label">Quick Split Simulator</h3>
-                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.25rem;">
-                        Launch the simulation engine to generate mock splits and test verification rules.
-                    </p>
-                    <button class="opp-action-btn" id="open-simulator-split-btn" onclick="document.getElementById('simulator-modal').classList.add('active');" style="display: flex; align-items: center; gap: 0.5rem;">
-                        <i data-lucide="plus-circle" style="width: 16px; height: 16px;"></i> Simulate P2P Split
-                    </button>
-                </div>
-            </div>
-        </section>
 
         <!-- SETTINGS TAB -->
         <section id="settings" class="page-section">
