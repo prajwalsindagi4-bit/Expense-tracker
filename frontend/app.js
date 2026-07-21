@@ -960,7 +960,7 @@ function renderLedger(filter = 'all', searchQuery = '') {
         }
 
         htmlContent += `
-            <div class="card reveal" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; padding: 1.25rem 1.5rem; margin-bottom: 0.75rem; gap: 1rem; border-radius: 14px;">
+            <div class="card reveal" data-no-tilt style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; padding: 1.25rem 1.5rem; margin-bottom: 0.75rem; gap: 1rem; border-radius: 14px;">
                 <div style="flex: 0 0 100px; color: var(--text-secondary); font-size: 0.9rem;">
                     ${formattedDate}
                 </div>
