@@ -12,7 +12,11 @@ let activePendingTx = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
     await fetchInitialData();
-    initApp();
+    try {
+        initApp();
+    } catch (e) {
+        console.error('initApp error (non-fatal):', e);
+    }
     initScrollReveal();
 });
 
@@ -1163,7 +1167,9 @@ function handleSimulationResult(result) {
 
 // Sandbox Simulation Projections UI
 function initSandboxChart() {
-    const ctx = document.getElementById('sandboxChart').getContext('2d');
+    const canvas = document.getElementById('sandboxChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
     
     sandboxChartInstance = new Chart(ctx, {
         type: 'line',
@@ -1207,15 +1213,21 @@ function initSandboxChart() {
 }
 
 function updateSandboxValues() {
-    const invest = document.getElementById('slider-invest').value;
+    const sliderInvestEl = document.getElementById('slider-invest');
+    if (!sliderInvestEl) return;
+    const invest = sliderInvestEl.value;
     const dining = document.getElementById('slider-dining').value;
     const bonus = document.getElementById('slider-bonus').value;
     const debt = document.getElementById('slider-debt').value;
 
-    document.getElementById('val-invest').innerText = `+₹${invest}`;
-    document.getElementById('val-dining').innerText = `${dining}%`;
-    document.getElementById('val-bonus').innerText = `${bonus}%`;
-    document.getElementById('val-debt').innerText = debt === '0' ? 'No change' : `+₹${debt}/mo`;
+    const valInvest = document.getElementById('val-invest');
+    const valDining = document.getElementById('val-dining');
+    const valBonus = document.getElementById('val-bonus');
+    const valDebt = document.getElementById('val-debt');
+    if (valInvest) valInvest.innerText = `+₹${invest}`;
+    if (valDining) valDining.innerText = `${dining}%`;
+    if (valBonus) valBonus.innerText = `${bonus}%`;
+    if (valDebt) valDebt.innerText = debt === '0' ? 'No change' : `+₹${debt}/mo`;
 }
 
 function runSandboxSimulation() {

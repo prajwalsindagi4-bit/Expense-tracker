@@ -92,3 +92,20 @@
   2. The Service Role Key intentionally bypasses RLS policies, allowing the trusted Python backend to manage users and transactions without database-level blocking.
 - **The Impact**: Backend database operations now succeed without being blocked by RLS policies. The application can register users and manage transaction data seamlessly.
 - **The Use Case**: Using a Service Role Key is the standard security architecture for a trusted backend server interacting with Supabase. It ensures the database remains locked down for direct client access while allowing full read/write capabilities for the authorized backend logic.
+
+## 5. All Tabs Blank Except Analytics (Cascade JS Failure)
+- **The Error**: Every tab in the app (Dashboard, Transactions, Budget, AI Insights, Settings) appeared completely blank/invisible. Only the Analytics (Spendings) tab displayed content.
+- **The Flow**:
+  1. On page load, `DOMContentLoaded` calls `fetchInitialData()`, then `initApp()`, then `initScrollReveal()`.
+  2. Inside `initApp()`, the function `initSandboxChart()` is called. This function does `document.getElementById('sandboxChart').getContext('2d')` — but the `#sandboxChart` canvas element was previously removed from `index.html`.
+  3. This throws `TypeError: Cannot read properties of null (reading 'getContext')`, which crashes `initApp()` entirely.
+  4. Because `initApp()` crashes, control never returns to the `DOMContentLoaded` handler, so `initScrollReveal()` on the next line **never runs**.
+  5. All content cards in the app use CSS classes `.reveal`, `.reveal-left`, `.reveal-scale` which start at `opacity: 0` via CSS. The `initScrollReveal()` function is responsible for adding the `.visible` class (which sets `opacity: 1`) via an IntersectionObserver.
+  6. Without `initScrollReveal()`, the `.visible` class is never added, so all cards remain invisible at `opacity: 0`.
+  7. The Analytics tab worked because `renderSpendings()` generates its own HTML dynamically without relying on `.reveal` classes.
+- **The Solution**:
+  1. Added a null guard inside `initSandboxChart()`: `const canvas = document.getElementById('sandboxChart'); if (!canvas) return;`
+  2. Added null guards inside `updateSandboxValues()` for all slider and value display elements.
+  3. Wrapped `initApp()` in a try-catch in the `DOMContentLoaded` handler so that `initScrollReveal()` always runs even if `initApp()` throws.
+- **The Impact**: All tabs (Dashboard, Transactions, Budget, AI Insights, Settings) now render their content correctly. The reveal animations work and cards are visible.
+- **The Use Case**: This fix ensures frontend resilience — a single missing DOM element or removed feature no longer crashes the entire initialization pipeline. The try-catch acts as a safety net so critical functions like scroll-reveal always initialize.
