@@ -53,9 +53,12 @@ function initApp() {
     });
 
     // 5. Open/Close Simulator Modals
-    document.getElementById('open-simulator-btn').addEventListener('click', () => {
-        document.getElementById('simulator-modal').classList.add('active');
-    });
+    const openSimBtn = document.getElementById('open-simulator-btn');
+    if (openSimBtn) {
+        openSimBtn.addEventListener('click', () => {
+            document.getElementById('simulator-modal').classList.add('active');
+        });
+    }
     // Use event delegation so listeners survive lucide.createIcons() re-rendering SVGs
     document.getElementById('simulator-modal').addEventListener('click', (e) => {
         if (e.target.closest('#close-simulator-btn')) {
@@ -96,10 +99,12 @@ function initApp() {
     const sandboxSliders = ['slider-invest', 'slider-dining', 'slider-bonus', 'slider-debt'];
     sandboxSliders.forEach(id => {
         const slider = document.getElementById(id);
-        slider.addEventListener('input', () => {
-            updateSandboxValues();
-            runSandboxSimulation();
-        });
+        if (slider) {
+            slider.addEventListener('input', () => {
+                if (typeof updateSandboxValues === 'function') updateSandboxValues();
+                if (typeof runSandboxSimulation === 'function') runSandboxSimulation();
+            });
+        }
     });
 
     // 8. Spendings month selector
@@ -163,8 +168,8 @@ function initApp() {
     // Initial render
     updateDashboardUI();
     renderOpportunitiesAndSpots();
-    initSandboxChart();
-    runSandboxSimulation();
+    if (typeof initSandboxChart === 'function') initSandboxChart();
+    if (typeof runSandboxSimulation === 'function') runSandboxSimulation();
 }
 
 // Tab switcher route control — Premium transition
