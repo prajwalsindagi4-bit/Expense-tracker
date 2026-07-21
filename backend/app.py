@@ -13,6 +13,7 @@ import json
 import re
 from dotenv import load_dotenv
 from supabase import create_client, Client
+from ai_categorizer import ai_model
 
 load_dotenv()
 
@@ -118,36 +119,7 @@ def seed_user_transactions(user_id):
     pass
 
 def auto_classify_merchant(description):
-    clean_desc = description.lower()
-    for merchant in AUTO_MERCHANTS:
-        for keyword in merchant['match']:
-            if keyword in clean_desc:
-                return {
-                    'category': merchant['category'],
-                    'reason': merchant['reason'],
-                    'tags': list(merchant['tags']),
-                    'merchantName': merchant['name']
-                }
-    
-    # Generic fallback heuristics
-    if any(word in clean_desc for word in ['coffee', 'cafe', 'restaurant', 'food', 'pizza', 'burger']):
-        return {'category': 'Food', 'reason': 'Dining out', 'tags': ['Food', 'Dining'], 'merchantName': 'Dining / Food'}
-    if any(word in clean_desc for word in ['grocery', 'supermarket', 'mart']):
-        return {'category': 'Food', 'reason': 'Groceries', 'tags': ['Food', 'Essentials'], 'merchantName': 'Groceries'}
-    if any(word in clean_desc for word in ['uber', 'lyft', 'taxi', 'cab', 'transit', 'train', 'flight', 'air']):
-        return {'category': 'Travel', 'reason': 'Transportation', 'tags': ['Travel'], 'merchantName': 'Travel / Transit'}
-    if any(word in clean_desc for word in ['walmart', 'amazon', 'target', 'store', 'shop']):
-        return {'category': 'Shopping', 'reason': 'Retail', 'tags': ['Shopping'], 'merchantName': 'Shopping'}
-    if any(word in clean_desc for word in ['electric', 'water', 'internet', 'utility', 'bill']):
-        return {'category': 'Utilities', 'reason': 'Monthly Utility', 'tags': ['Utilities', 'Bills'], 'merchantName': 'Utility Bill'}
-    if any(word in clean_desc for word in ['rent', 'lease', 'mortgage', 'housing']):
-        return {'category': 'Rent', 'reason': 'Housing', 'tags': ['Rent', 'Housing'], 'merchantName': 'Housing'}
-    if any(word in clean_desc for word in ['salary', 'payroll', 'income', 'deposit', 'dividend']):
-        return {'category': 'Income', 'reason': 'Income', 'tags': ['Income'], 'merchantName': 'Income Source'}
-    if any(word in clean_desc for word in ['invest', 'stock', 'mutual fund', 'broker']):
-        return {'category': 'Investments', 'reason': 'Investing', 'tags': ['Investments', 'Wealth'], 'merchantName': 'Investment'}
-    
-    return None
+    return ai_model.predict(description)
 
 def check_is_p2p(description, flow):
     if flow != 'expense':
