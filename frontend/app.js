@@ -2080,3 +2080,72 @@ function initFloatingElements() {
         });
     });
 }
+
+// ==========================================
+// REVIEW MODAL LOGIC
+// ==========================================
+function openReviewModal() {
+    document.getElementById('review-modal').classList.add('active');
+    document.getElementById('review-rating').value = '0';
+    document.getElementById('review-text').value = '';
+    document.getElementById('review-rating-label').textContent = 'Select a rating';
+    document.querySelectorAll('.review-star').forEach(s => s.classList.remove('active'));
+    lucide.createIcons();
+}
+
+function closeReviewModal() {
+    document.getElementById('review-modal').classList.remove('active');
+}
+
+document.querySelectorAll('.review-star').forEach(star => {
+    star.addEventListener('click', function() {
+        const rating = parseInt(this.getAttribute('data-value'));
+        document.getElementById('review-rating').value = rating;
+        
+        // Update label
+        const labels = ['Poor', 'Fair', 'Good', 'Very Good', 'Excellent'];
+        document.getElementById('review-rating-label').textContent = labels[rating - 1] || 'Select a rating';
+        
+        // Color stars
+        document.querySelectorAll('.review-star').forEach(s => {
+            if (parseInt(s.getAttribute('data-value')) <= rating) {
+                s.classList.add('active');
+            } else {
+                s.classList.remove('active');
+            }
+        });
+    });
+});
+
+async function submitReview() {
+    const rating = parseInt(document.getElementById('review-rating').value);
+    const review_text = document.getElementById('review-text').value.trim();
+
+    if (rating === 0) {
+        showToast('Please select a star rating.', 'error');
+        return;
+    }
+    if (!review_text) {
+        showToast('Please write a review.', 'error');
+        return;
+    }
+
+    try {
+        const res = await fetch('https://expense-tracker-prajwal11.vercel.app/api/reviews', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + localStorage.getItem('token')
+            },
+            body: JSON.stringify({ rating, review_text })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to submit review');
+
+        showToast('Review submitted successfully! Thank you!', 'success');
+        closeReviewModal();
+    } catch (err) {
+        showToast(err.message, 'error');
+    }
+}

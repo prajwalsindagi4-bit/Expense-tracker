@@ -613,6 +613,18 @@
                 </div>
             </div>
 
+            <div class="card col-12 reveal" style="max-width: 800px; margin: 2rem auto 0 auto;">
+                <h3 class="stat-label" style="font-size: 0.95rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.75rem; margin-bottom: 1.5rem;">Feedback</h3>
+                
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+                    <div>
+                        <div style="font-weight:500; font-size:0.95rem;">Write a Review</div>
+                        <div style="font-size:0.8rem; color:var(--text-muted); margin-top:0.25rem;">Share your thoughts and rate your experience with ManMo.</div>
+                    </div>
+                    <button class="btn-primary" onclick="openReviewModal()">Write Review</button>
+                </div>
+            </div>
+
             <div class="card col-12 reveal" style="max-width: 800px; margin: 2rem auto 2rem auto; border: 1px solid rgba(239, 68, 68, 0.2);">
                 <h3 class="stat-label" style="font-size: 0.95rem; border-bottom: 1px solid rgba(239, 68, 68, 0.2); padding-bottom: 0.75rem; margin-bottom: 1.5rem; color: var(--danger);">Danger Zone</h3>
                 
@@ -794,6 +806,32 @@
 
     <!-- JS Core Script loading order -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <!-- ===== REVIEW MODAL ===== -->
+    <div class="modal-overlay" id="review-modal">
+        <div class="modal-card">
+            <button class="modal-close" onclick="closeReviewModal()">
+                <i data-lucide="x"></i>
+            </button>
+            <h2 class="modal-title">Write a Review</h2>
+            <div style="margin-bottom: 1.5rem; text-align: center;">
+                <div id="star-rating-container" style="font-size: 2.5rem; color: #444; cursor: pointer; display: flex; justify-content: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                    <span class="review-star" data-value="1">★</span>
+                    <span class="review-star" data-value="2">★</span>
+                    <span class="review-star" data-value="3">★</span>
+                    <span class="review-star" data-value="4">★</span>
+                    <span class="review-star" data-value="5">★</span>
+                </div>
+                <input type="hidden" id="review-rating" value="0">
+                <div style="font-size: 0.85rem; color: var(--text-muted);" id="review-rating-label">Select a rating</div>
+            </div>
+            <div style="margin-bottom: 1.5rem;">
+                <label class="form-label" for="review-text">Your Review</label>
+                <textarea id="review-text" class="form-input" rows="4" placeholder="What do you think about ManMo?" style="resize: vertical; background: rgba(0,0,0,0.3); color: white;"></textarea>
+            </div>
+            <button class="btn-primary" style="width: 100%;" onclick="submitReview()">Submit Review</button>
+        </div>
+    </div>
+
     <script src="transactions.js"></script>
     <script src="health.js"></script>
     <script src="storytelling.js"></script>

@@ -26,7 +26,7 @@ from ai_categorizer import ai_model
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/api/*": {"origins": ["http://localhost:5500", "http://127.0.0.1:5500", "https://expense-tracker-prajwal11.vercel.app"]}})
 
 jwt_secret = os.environ.get("JWT_SECRET")
 if not jwt_secret:
@@ -192,6 +192,7 @@ def check_is_p2p(description, flow):
     return not is_known and (matches_keyword or matches_name)
 
 @app.route('/api/auth/signup', methods=['POST'])
+@limiter.limit('3 per hour')
 def signup():
     data = request.json
     name = data.get('name', 'User')
@@ -217,6 +218,33 @@ def signup():
         if 'duplicate key value' in str(e).lower() or 'unique constraint' in str(e).lower():
             return jsonify({'error': 'Email already exists'}), 409
         return jsonify({'error': str(e)}), 500
+
+@app.route("/api/reviews", methods=["POST"])
+@limiter.limit('2 per day')
+@token_required
+def submit_review(current_user):
+    try:
+        data = request.json
+        rating = data.get("rating")
+        review_text = data.get("review_text")
+
+        if not rating or not isinstance(rating, int) or rating < 1 or rating > 5:
+            return jsonify({"error": "Valid rating between 1 and 5 is required"}), 400
+        
+        if not review_text or len(review_text) > 2000:
+            return jsonify({"error": "Review text is required (max 2000 chars)"}), 400
+
+        # Insert review into database
+        supabase.table("user_reviews").insert({
+            "user_id": current_user["id"],
+            "rating": rating,
+            "review_text": review_text
+        }).execute()
+
+        return jsonify({"message": "Review submitted successfully"}), 201
+    except Exception as e:
+        app.logger.error(f"Error submitting review: {str(e)}")
+        return jsonify({"error": "Failed to submit review. Server error."}), 500
 
 @app.route('/api/auth/login', methods=['POST'])
 @limiter.limit('5 per minute')
@@ -273,6 +301,7 @@ def google_auth():
 
 
 @app.route('/api/auth/change-password', methods=['POST'])
+@limiter.limit('3 per hour')
 @token_required
 def change_password(user_id):
     data = request.json
@@ -483,6 +512,7 @@ def confirm_transaction(user_id):
 
 
 @app.route('/api/upload-statement', methods=['POST'])
+@limiter.limit('10 per hour')
 @token_required
 def upload_statement(user_id):
     if 'file' not in request.files:
