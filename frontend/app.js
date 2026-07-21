@@ -258,8 +258,9 @@ function updateDashboardUI() {
     // Render health factors list
     const factorsList = document.getElementById('health-factors');
     factorsList.innerHTML = '';
+    let factorsHtml = '';
     healthData.factors.forEach(f => {
-        factorsList.innerHTML += `
+        factorsHtml += `
             <div class="health-factor-item">
                 <span style="font-weight:500;">${f.name}</span>
                 <span style="color: ${f.score >= 80 ? 'var(--success)' : f.score >= 50 ? 'var(--warning)' : 'var(--danger)'}; font-weight:600;">
@@ -268,6 +269,7 @@ function updateDashboardUI() {
             </div>
         `;
     });
+    factorsList.innerHTML = factorsHtml;
 
     // 2. Update stats indicators dynamically based on most recent transaction date
     let currentMonthNum = new Date().getMonth();
@@ -702,6 +704,7 @@ function renderLedger(filter = 'all', searchQuery = '') {
         return;
     }
 
+    let htmlContent = '';
     list.forEach(tx => {
         const amountSign = tx.flow === 'income' ? '+' : '-';
         const amountClass = tx.flow === 'income' ? 'amount-income' : tx.flow === 'investment' ? 'amount-investment' : 'amount-expense';
@@ -737,7 +740,7 @@ function renderLedger(filter = 'all', searchQuery = '') {
             categoryHtml = `<span class="badge ${badgeClass}">${tx.category}</span>`;
         }
 
-        ledgerBody.innerHTML += `
+        htmlContent += `
             <div class="card reveal" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; padding: 1.25rem 1.5rem; margin-bottom: 0.75rem; gap: 1rem; border-radius: 14px;">
                 <div style="flex: 0 0 100px; color: var(--text-secondary); font-size: 0.9rem;">
                     ${formattedDate}
@@ -758,6 +761,8 @@ function renderLedger(filter = 'all', searchQuery = '') {
             </div>
         `;
     });
+    
+    ledgerBody.innerHTML = htmlContent;
 
     // Add event listeners for the inline category dropdowns
     document.querySelectorAll('.category-select').forEach(select => {
@@ -819,8 +824,9 @@ function checkPendingConfirmationsInbox() {
     inbox.style.display = 'block';
     container.innerHTML = '';
 
+    let pendingHtml = '';
     pendingConfirmations.forEach((item, index) => {
-        container.innerHTML += `
+        pendingHtml += `
             <div class="confirm-question" style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.50rem;">
                 <span>You transferred <strong>₹${item.amount.toFixed(2)}</strong> to <strong>${item.payee}</strong> on ${item.date}. What was this for?</span>
                 <button class="btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;" onclick="triggerConfirmationFlow('${item.id}')">
@@ -829,6 +835,7 @@ function checkPendingConfirmationsInbox() {
             </div>
         `;
     });
+    container.innerHTML = pendingHtml;
     
     lucide.createIcons();
 }
@@ -985,7 +992,7 @@ function renderSpendings() {
 
         const percentOfTotal = totalSpent > 0 ? Math.round((group.total / totalSpent) * 100) : 0;
 
-        container.innerHTML += `
+        catHtml += `
             <div class="card spending-cat-card" style="border-left-color: ${cfg.border};">
                 <div class="spending-cat-header">
                     <div class="spending-cat-title">
@@ -1005,6 +1012,7 @@ function renderSpendings() {
             </div>
         `;
     });
+    container.innerHTML = catHtml;
 
     lucide.createIcons();
 }
@@ -1019,8 +1027,9 @@ function renderOpportunitiesAndSpots() {
     oppsList.innerHTML = '';
     spotsList.innerHTML = '';
 
+    let oppsHtml = '';
     opps.forEach(o => {
-        oppsList.innerHTML += `
+        oppsHtml += `
             <div class="card opp-item-card ${o.borderClass}">
                 <div class="opp-item-header">
                     <span class="opp-item-title">${o.title}</span>
@@ -1031,9 +1040,11 @@ function renderOpportunitiesAndSpots() {
             </div>
         `;
     });
+    oppsList.innerHTML = oppsHtml;
 
+    let spotsHtml = '';
     spots.forEach(s => {
-        spotsList.innerHTML += `
+        spotsHtml += `
             <div class="card opp-item-card ${s.borderClass}">
                 <div class="opp-item-header">
                     <span class="opp-item-title" style="color: var(--warning);">${s.title}</span>
@@ -1044,6 +1055,7 @@ function renderOpportunitiesAndSpots() {
             </div>
         `;
     });
+    spotsList.innerHTML = spotsHtml;
 }
 
 function executeOpportunityAction(id) {
