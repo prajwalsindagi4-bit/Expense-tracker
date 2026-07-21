@@ -406,7 +406,7 @@ def upload_statement():
         return jsonify({'error': 'No file selected.'}), 400
         
     try:
-        stream = io.StringIO(file.stream.read().decode("UTF8"), newline=None)
+        stream = io.StringIO(file.stream.read().decode("utf-8-sig", errors="replace"), newline=None)
         csv_input = csv.reader(stream)
         
         headers = next(csv_input, None)

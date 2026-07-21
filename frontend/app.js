@@ -150,13 +150,17 @@ function initApp() {
                         body: formData
                     });
                     
-                    if (!response.ok) throw new Error('Upload failed');
+                    if (!response.ok) {
+                        const errData = await response.json().catch(() => null);
+                        const errMsg = errData && errData.error ? errData.error : await response.text();
+                        throw new Error(`Backend Error (${response.status}): ${errMsg}`);
+                    }
                     
                     localStorage.setItem('hasDataUploaded', 'true');
                     window.location.reload();
                 } catch (e) {
                     console.error("Upload failed:", e);
-                    alert("Failed to upload statement.");
+                    alert("Failed to upload statement.\n\n" + e.message);
                     btn.innerHTML = originalHTML;
                     lucide.createIcons();
                 }
