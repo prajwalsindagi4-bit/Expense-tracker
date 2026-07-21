@@ -13,6 +13,9 @@ import json
 import re
 from dotenv import load_dotenv
 from supabase import create_client, Client
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from ai_categorizer import ai_model
 
 load_dotenv()
