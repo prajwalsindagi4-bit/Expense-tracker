@@ -564,6 +564,10 @@ function renderLedger(filter = 'all', searchQuery = '') {
         list = list.filter(t => t.flow === 'expense');
     } else if (filter === 'investment') {
         list = list.filter(t => t.flow === 'investment');
+    } else if (filter === 'categorized') {
+        list = list.filter(t => t.category && t.category.toLowerCase() !== 'miscellaneous');
+    } else if (filter === 'uncategorized') {
+        list = list.filter(t => !t.category || t.category.toLowerCase() === 'miscellaneous');
     }
 
     // Search query
@@ -600,6 +604,26 @@ function renderLedger(filter = 'all', searchQuery = '') {
         const dateObj = new Date(tx.date);
         const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
+        let categoryHtml = '';
+        if (!tx.category || tx.category.toLowerCase() === 'miscellaneous') {
+            categoryHtml = `
+                <select class="category-select" data-id="${tx.id}" style="background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border); color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.85rem; outline: none; cursor: pointer;">
+                    <option value="Miscellaneous" selected>Miscellaneous</option>
+                    <option value="Food">Food</option>
+                    <option value="Travel">Travel</option>
+                    <option value="Shopping">Shopping</option>
+                    <option value="Utilities">Utilities</option>
+                    <option value="Rent">Rent</option>
+                    <option value="Bills">Bills</option>
+                    <option value="Income">Income</option>
+                    <option value="Investments">Investments</option>
+                    <option value="Other">Other</option>
+                </select>
+            `;
+        } else {
+            categoryHtml = `<span class="badge ${badgeClass}">${tx.category}</span>`;
+        }
+
         ledgerBody.innerHTML += `
             <div class="card reveal" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; padding: 1.25rem 1.5rem; margin-bottom: 0.75rem; gap: 1rem; border-radius: 14px;">
                 <div style="flex: 0 0 100px; color: var(--text-secondary); font-size: 0.9rem;">
@@ -610,7 +634,7 @@ function renderLedger(filter = 'all', searchQuery = '') {
                     ${reasonHtml ? `<div style="margin-top: 0.2rem;">${reasonHtml}</div>` : ''}
                 </div>
                 <div style="flex: 0 0 auto;">
-                    <span class="badge ${badgeClass}">${tx.category}</span>
+                    ${categoryHtml}
                 </div>
                 <div style="flex: 1 1 150px; display: flex; gap: 0.25rem; flex-wrap: wrap;">
                     ${tagsHtml}
@@ -620,6 +644,47 @@ function renderLedger(filter = 'all', searchQuery = '') {
                 </div>
             </div>
         `;
+    });
+
+    // Add event listeners for the inline category dropdowns
+    document.querySelectorAll('.category-select').forEach(select => {
+        select.addEventListener('change', async (e) => {
+            const txId = e.target.getAttribute('data-id');
+            const newCategory = e.target.value;
+            e.target.disabled = true;
+            
+            try {
+                const res = await fetch(`${API_BASE}/transactions/${txId}/category`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...getAuthHeaders()
+                    },
+                    body: JSON.stringify({ category: newCategory })
+                });
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    // Update local state
+                    const txIndex = transactions.findIndex(t => t.id === txId);
+                    if (txIndex !== -1) {
+                        transactions[txIndex].category = newCategory;
+                    }
+                    // Re-render
+                    const currentFilter = document.querySelector('#tx-filter-container .active')?.getAttribute('data-filter') || 'all';
+                    const currentSearch = document.getElementById('tx-search-input')?.value || '';
+                    renderLedger(currentFilter, currentSearch);
+                    updateDashboardUI(); // update overall dashboard stats
+                } else {
+                    alert("Failed to update category");
+                    e.target.disabled = false;
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Error updating category");
+                e.target.disabled = false;
+            }
+        });
     });
 
     // Re-initialize scroll reveal so dynamically added items animate properly
@@ -1049,8 +1114,11 @@ function updateSandboxValues() {
 }
 
 function runSandboxSimulation() {
+    const sliderInvest = document.getElementById('slider-invest');
+    if (!sliderInvest) return; // Exit if sandbox UI doesn't exist
+
     const params = {
-        addInvest: parseFloat(document.getElementById('slider-invest').value),
+        addInvest: parseFloat(sliderInvest.value),
         reduceFoodPct: parseFloat(document.getElementById('slider-dining').value),
         investBonusPct: parseFloat(document.getElementById('slider-bonus').value),
         extraDebtPay: parseFloat(document.getElementById('slider-debt').value)
@@ -1059,7 +1127,8 @@ function runSandboxSimulation() {
     const results = calculateWhatIfProjections(params);
 
     // Update Text Output Summary
-    document.getElementById('sandbox-summary-text').innerHTML = results.summary;
+    const summaryText = document.getElementById('sandbox-summary-text');
+    if (summaryText) summaryText.innerHTML = results.summary;
     lucide.createIcons();
 
     // Update Chart

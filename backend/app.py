@@ -46,22 +46,24 @@ AUTO_MERCHANTS = [
     { 'name': 'Hulu', 'category': 'Bills', 'reason': 'Subscription', 'tags': ['Entertainment', 'Subscription'], 'match': ['hulu'] },
     { 'name': 'Whole Foods', 'category': 'Food', 'reason': 'Groceries', 'tags': ['Food', 'Essentials'], 'match': ['whole foods', 'wholefoods'] },
     { 'name': 'DoorDash', 'category': 'Food', 'reason': 'Dinner Split', 'tags': ['Food', 'Dining'], 'match': ['doordash'] },
-    { 'name': 'UberEats', 'category': 'Food', 'reason': 'Lunch Order', 'tags': ['Food', 'Dining'], 'match': ['ubereats'] },
-    { 'name': 'Starbucks', 'category': 'Food', 'reason': 'Coffee Coffee', 'tags': ['Food', 'Discretionary'], 'match': ['starbucks'] },
+    { 'name': 'UberEats', 'category': 'Food', 'reason': 'Lunch Order', 'tags': ['Food', 'Dining'], 'match': ['ubereats', 'uber eats'] },
+    { 'name': 'Starbucks', 'category': 'Food', 'reason': 'Coffee', 'tags': ['Food', 'Discretionary'], 'match': ['starbucks'] },
     { 'name': 'McDonalds', 'category': 'Food', 'reason': 'Quick Meal', 'tags': ['Food', 'Discretionary'], 'match': ['mcdonald'] },
-    { 'name': 'Uber', 'category': 'Travel', 'reason': 'Cab Split', 'tags': ['Travel', 'Commute'], 'match': ['uber ride', 'uber.com'] },
+    { 'name': 'Uber', 'category': 'Travel', 'reason': 'Cab Split', 'tags': ['Travel', 'Commute'], 'match': ['uber ride', 'uber.com', 'uber'] },
     { 'name': 'Lyft', 'category': 'Travel', 'reason': 'Cab Split', 'tags': ['Travel', 'Commute'], 'match': ['lyft'] },
-    { 'name': 'Chevron', 'category': 'Travel', 'reason': 'Fuel Refill', 'tags': ['Travel', 'Essentials'], 'match': ['chevron', 'shell gas'] },
-    { 'name': 'Amazon Shopping', 'category': 'Shopping', 'reason': 'Retail Purchase', 'tags': ['Shopping', 'Discretionary'], 'match': ['amazon.com', 'amazon shopping'] },
-    { 'name': 'Target', 'category': 'Shopping', 'reason': 'Household Items', 'tags': ['Shopping', 'Essentials'], 'match': ['target store', 'target.com'] },
+    { 'name': 'Chevron', 'category': 'Travel', 'reason': 'Fuel Refill', 'tags': ['Travel', 'Essentials'], 'match': ['chevron', 'shell', 'arco'] },
+    { 'name': 'Amazon Shopping', 'category': 'Shopping', 'reason': 'Retail Purchase', 'tags': ['Shopping', 'Discretionary'], 'match': ['amazon', 'amzn'] },
+    { 'name': 'Target', 'category': 'Shopping', 'reason': 'Household Items', 'tags': ['Shopping', 'Essentials'], 'match': ['target'] },
     { 'name': 'Zara', 'category': 'Shopping', 'reason': 'Clothing', 'tags': ['Shopping', 'Discretionary'], 'match': ['zara'] },
     { 'name': 'Best Buy', 'category': 'Shopping', 'reason': 'Electronics', 'tags': ['Shopping', 'Discretionary'], 'match': ['best buy', 'bestbuy'] },
     { 'name': 'Fidelity SIP', 'category': 'Investments', 'reason': 'Index Funds', 'tags': ['Investments', 'Wealth'], 'match': ['fidelity', 'vanguard'] },
     { 'name': 'Robinhood', 'category': 'Investments', 'reason': 'Stock Buy', 'tags': ['Investments', 'Wealth'], 'match': ['robinhood'] },
-    { 'name': 'PPF Deposit', 'category': 'Investments', 'reason': 'Retirement Build', 'tags': ['Investments', 'Retirement'], 'match': ['ppf deposit', 'nps contribution'] },
-    { 'name': 'PG&E Power', 'category': 'Utilities', 'reason': 'Electricity Bill', 'tags': ['Utilities', 'Essentials'], 'match': ['pg&e', 'pge utility'] },
+    { 'name': 'PG&E Power', 'category': 'Utilities', 'reason': 'Electricity Bill', 'tags': ['Utilities', 'Essentials'], 'match': ['pg&e', 'pge utility', 'pg and e'] },
     { 'name': 'Comcast Broadband', 'category': 'Utilities', 'reason': 'Internet Bill', 'tags': ['Utilities', 'Essentials'], 'match': ['comcast', 'xfinity'] },
-    { 'name': 'AT&T Wireless', 'category': 'Utilities', 'reason': 'Cell Service', 'tags': ['Utilities', 'Essentials'], 'match': ['at&t', 't-mobile'] }
+    { 'name': 'AT&T Wireless', 'category': 'Utilities', 'reason': 'Cell Service', 'tags': ['Utilities', 'Essentials'], 'match': ['at&t', 't-mobile', 'verizon'] },
+    { 'name': 'Grocery', 'category': 'Food', 'reason': 'Groceries', 'tags': ['Food', 'Essentials'], 'match': ['grocery', 'market', 'safeway', 'kroger', 'trader joe'] },
+    { 'name': 'Dining', 'category': 'Food', 'reason': 'Dining', 'tags': ['Food', 'Dining'], 'match': ['restaurant', 'cafe', 'grill', 'diner'] },
+    { 'name': 'Airlines', 'category': 'Travel', 'reason': 'Flight', 'tags': ['Travel', 'Vacation'], 'match': ['airlines', 'airways', 'delta', 'united', 'american air'] },
 ]
 
 HUMAN_NAMES = ['Sarah', 'John', 'David', 'Emma', 'Michael', 'Mark', 'Chris', 'Alex', 'Jessica', 'Ryan', 'Lisa', 'Conner', 'Green', 'Mercer', 'Amanda', 'Robert', 'Daniel', 'Sophia']
@@ -125,6 +127,25 @@ def auto_classify_merchant(description):
                     'tags': list(merchant['tags']),
                     'merchantName': merchant['name']
                 }
+    
+    # Generic fallback heuristics
+    if any(word in clean_desc for word in ['coffee', 'cafe', 'restaurant', 'food', 'pizza', 'burger']):
+        return {'category': 'Food', 'reason': 'Dining out', 'tags': ['Food', 'Dining'], 'merchantName': 'Dining / Food'}
+    if any(word in clean_desc for word in ['grocery', 'supermarket', 'mart']):
+        return {'category': 'Food', 'reason': 'Groceries', 'tags': ['Food', 'Essentials'], 'merchantName': 'Groceries'}
+    if any(word in clean_desc for word in ['uber', 'lyft', 'taxi', 'cab', 'transit', 'train', 'flight', 'air']):
+        return {'category': 'Travel', 'reason': 'Transportation', 'tags': ['Travel'], 'merchantName': 'Travel / Transit'}
+    if any(word in clean_desc for word in ['walmart', 'amazon', 'target', 'store', 'shop']):
+        return {'category': 'Shopping', 'reason': 'Retail', 'tags': ['Shopping'], 'merchantName': 'Shopping'}
+    if any(word in clean_desc for word in ['electric', 'water', 'internet', 'utility', 'bill']):
+        return {'category': 'Utilities', 'reason': 'Monthly Utility', 'tags': ['Utilities', 'Bills'], 'merchantName': 'Utility Bill'}
+    if any(word in clean_desc for word in ['rent', 'lease', 'mortgage', 'housing']):
+        return {'category': 'Rent', 'reason': 'Housing', 'tags': ['Rent', 'Housing'], 'merchantName': 'Housing'}
+    if any(word in clean_desc for word in ['salary', 'payroll', 'income', 'deposit', 'dividend']):
+        return {'category': 'Income', 'reason': 'Income', 'tags': ['Income'], 'merchantName': 'Income Source'}
+    if any(word in clean_desc for word in ['invest', 'stock', 'mutual fund', 'broker']):
+        return {'category': 'Investments', 'reason': 'Investing', 'tags': ['Investments', 'Wealth'], 'merchantName': 'Investment'}
+    
     return None
 
 def check_is_p2p(description, flow):
@@ -228,6 +249,27 @@ def get_transactions():
         'transactions': txs,
         'pendingConfirmations': pends
     })
+
+@app.route('/api/transactions/<tx_id>/category', methods=['PUT'])
+def update_transaction_category(tx_id):
+    user_id = request.headers.get('X-User-Id')
+    if not user_id: return jsonify({'error': 'Unauthorized'}), 401
+
+    data = request.json
+    new_category = data.get('category')
+    if not new_category:
+        return jsonify({'error': 'Missing category field'}), 400
+
+    try:
+        # Update the category where id matches tx_id AND user_id matches to ensure authorization
+        res = supabase.table('transactions').update({'category': new_category}).eq('id', tx_id).eq('user_id', user_id).execute()
+        
+        if len(res.data) == 0:
+            return jsonify({'error': 'Transaction not found or unauthorized'}), 404
+            
+        return jsonify({'status': 'success', 'transaction': res.data[0]})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/transactions/simulate', methods=['POST'])
 def simulate_transaction():
