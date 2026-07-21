@@ -1,9 +1,11 @@
 # pyrefly: ignore [missing-import]
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 import time
 import random
-from datetime import datetime
+from datetime import datetime, timedelta
 import csv
 import io
 import hashlib
@@ -11,6 +13,9 @@ import uuid
 import os
 import json
 import re
+import jwt
+import bcrypt
+from functools import wraps
 from dotenv import load_dotenv
 from supabase import create_client, Client
 import sys
@@ -22,6 +27,21 @@ load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
+
+jwt_secret = os.environ.get("JWT_SECRET")
+if not jwt_secret:
+    if os.environ.get("FLASK_ENV") != "development":
+        raise ValueError("CRITICAL SECURITY ERROR: JWT_SECRET environment variable is missing. Refusing to start.")
+    jwt_secret = "super-secret-key-fallback"
+
+app.config["SECRET_KEY"] = jwt_secret
+
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://"
+)
 
 url: str = os.environ.get("SUPABASE_URL", "")
 key: str = os.environ.get("SUPABASE_KEY", "")
@@ -52,8 +72,35 @@ def check_supabase_connection():
     if supabase is None and request.path.startswith('/api/'):
         return jsonify({"error": "Database connection not configured. Please set SUPABASE_URL and SUPABASE_KEY environment variables."}), 500
 
+
+def token_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = None
+        auth_header = request.headers.get('Authorization')
+        if auth_header and auth_header.startswith('Bearer '):
+            token = auth_header.split(' ')[1]
+            
+        if not token:
+            return jsonify({'error': 'Token is missing!'}), 401
+            
+        try:
+            data = jwt.decode(token, app.config['SECRET_KEY'], algorithms=["HS256"])
+            kwargs['user_id'] = data['user_id']
+        except Exception as e:
+            return jsonify({'error': 'Token is invalid!'}), 401
+            
+        return f(*args, **kwargs)
+    return decorated
+
 def hash_password(password):
-    return hashlib.sha256(password.encode()).hexdigest()
+    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+def verify_password(password, hashed_password):
+    if not hashed_password.startswith('$2b$'):
+        return hashlib.sha256(password.encode()).hexdigest() == hashed_password
+    return bcrypt.checkpw(password.encode('utf-8'), hashed_password.encode('utf-8'))
+
 
 AUTO_MERCHANTS = [
     { 'name': 'Netflix', 'category': 'Bills', 'reason': 'Subscription', 'tags': ['Entertainment', 'Subscription'], 'match': ['netflix'] },
@@ -164,24 +211,37 @@ def signup():
         }
         res = supabase.table('users').insert(user_data).execute()
         seed_user_transactions(user_id)
-        return jsonify({'status': 'success', 'user': {'id': user_id, 'name': name, 'email': email}})
+        token = jwt.encode({'user_id': user_id, 'exp': datetime.utcnow() + timedelta(hours=24)}, app.config['SECRET_KEY'], algorithm='HS256')
+        return jsonify({'status': 'success', 'user': {'id': user_id, 'name': name, 'email': email}, 'token': token})
     except Exception as e:
         if 'duplicate key value' in str(e).lower() or 'unique constraint' in str(e).lower():
             return jsonify({'error': 'Email already exists'}), 409
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/auth/login', methods=['POST'])
+@limiter.limit('5 per minute')
 def login():
     data = request.json
     email = data.get('email')
     password = data.get('password')
     
-    res = supabase.table('users').select('id, name, email').eq('email', email).eq('password_hash', hash_password(password)).execute()
+    res = supabase.table('users').select('id, name, email, password_hash').eq('email', email).execute()
     
     if res.data and len(res.data) > 0:
-        return jsonify({'status': 'success', 'user': res.data[0]})
-    else:
-        return jsonify({'error': 'Invalid credentials'}), 401
+        user = res.data[0]
+        if verify_password(password, user['password_hash']):
+            if not user['password_hash'].startswith('$2b$'):
+                new_hash = hash_password(password)
+                supabase.table('users').update({'password_hash': new_hash}).eq('id', user['id']).execute()
+            
+            token = jwt.encode({'user_id': user['id'], 'exp': datetime.utcnow() + timedelta(hours=24)}, app.config['SECRET_KEY'], algorithm='HS256')
+            return jsonify({
+                'status': 'success', 
+                'user': {'id': user['id'], 'name': user['name'], 'email': user['email']},
+                'token': token
+            })
+            
+    return jsonify({'error': 'Invalid credentials'}), 401
 
 @app.route('/api/auth/google', methods=['POST'])
 def google_auth():
@@ -208,12 +268,42 @@ def google_auth():
         seed_user_transactions(user_id)
         user = {'id': user_id, 'name': name, 'email': email}
         
-    return jsonify({'status': 'success', 'user': user})
+    token = jwt.encode({'user_id': user['id'], 'exp': datetime.utcnow() + timedelta(hours=24)}, app.config['SECRET_KEY'], algorithm='HS256')
+    return jsonify({'status': 'success', 'user': user, 'token': token})
+
+
+@app.route('/api/auth/change-password', methods=['POST'])
+@token_required
+def change_password(user_id):
+    data = request.json
+    current_password = data.get('current_password')
+    new_password = data.get('new_password')
+    if not all([current_password, new_password]):
+        return jsonify({'error': 'Missing required fields'}), 400
+    res = supabase.table('users').select('*').eq('id', user_id).execute()
+    if not res.data or len(res.data) == 0:
+        return jsonify({'error': 'Invalid current password'}), 401
+    user_id = res.data[0]['id']
+    if not verify_password(current_password, res.data[0]['password_hash']):
+        return jsonify({'error': 'Invalid current password'}), 401
+    supabase.table('users').update({'password_hash': hash_password(new_password)}).eq('id', user_id).execute()
+    return jsonify({'status': 'success'})
+
+@app.route('/api/auth/delete-account', methods=['POST'])
+@token_required
+def delete_account(user_id):
+    try:
+        supabase.table('transactions').delete().eq('user_id', user_id).execute()
+        supabase.table('pending_confirmations').delete().eq('user_id', user_id).execute()
+        supabase.table('ai_feedback').delete().eq('user_id', user_id).execute()
+        supabase.table('users').delete().eq('id', user_id).execute()
+        return jsonify({'status': 'success'})
+    except Exception as e:
+        return jsonify({'error': 'An error occurred while deleting your account.'}), 500
 
 @app.route('/api/transactions', methods=['GET'])
-def get_transactions():
-    user_id = request.headers.get('X-User-Id')
-    if not user_id: return jsonify({'error': 'Unauthorized'}), 401
+@token_required
+def get_transactions(user_id):
     
     tx_res = supabase.table('transactions').select('*').eq('user_id', user_id).order('date', desc=True).execute()
     pending_res = supabase.table('pending_confirmations').select('*').eq('user_id', user_id).order('date', desc=True).execute()
@@ -238,9 +328,8 @@ def get_transactions():
     })
 
 @app.route('/api/transactions/<tx_id>/category', methods=['PUT'])
-def update_transaction_category(tx_id):
-    user_id = request.headers.get('X-User-Id')
-    if not user_id: return jsonify({'error': 'Unauthorized'}), 401
+@token_required
+def update_transaction_category(user_id, tx_id):
 
     data = request.json
     new_category = data.get('category')
@@ -272,9 +361,8 @@ def update_transaction_category(tx_id):
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/transactions/simulate', methods=['POST'])
-def simulate_transaction():
-    user_id = request.headers.get('X-User-Id')
-    if not user_id: return jsonify({'error': 'Unauthorized'}), 401
+@token_required
+def simulate_transaction(user_id):
 
     data = request.json
     desc = data.get('description', '')
@@ -356,9 +444,8 @@ def simulate_transaction():
         })
 
 @app.route('/api/transactions/confirm', methods=['POST'])
-def confirm_transaction():
-    user_id = request.headers.get('X-User-Id')
-    if not user_id: return jsonify({'error': 'Unauthorized'}), 401
+@token_required
+def confirm_transaction(user_id):
 
     data = request.json
     tx_id = data.get('id')
@@ -396,19 +483,27 @@ def confirm_transaction():
 
 
 @app.route('/api/upload-statement', methods=['POST'])
-def upload_statement():
+@token_required
+def upload_statement(user_id):
     if 'file' not in request.files:
         return jsonify({'error': 'No file uploaded. Please select a CSV file.'}), 400
     
     file = request.files['file']
-    if file.filename == '':
-        return jsonify({'error': 'No file selected.'}), 400
+    if file.filename == '' or not file.filename.lower().endswith('.csv'):
+        return jsonify({'error': 'Invalid file format. Please upload a CSV.'}), 400
+        
+    file_content = file.read(5 * 1024 * 1024)
+    if len(file_content) >= 5 * 1024 * 1024:
+        return jsonify({'error': 'File too large. Maximum size is 5MB.'}), 400
+        
+    import io
+    stream = io.StringIO(file_content.decode("utf-8-sig", errors="replace"), newline=None)
         
     statement_month = request.form.get('statementMonth', datetime.now().strftime("%m"))
     statement_year = request.form.get('statementYear', datetime.now().strftime("%Y"))
         
     try:
-        stream = io.StringIO(file.stream.read().decode("utf-8-sig", errors="replace"), newline=None)
+        
         csv_input = csv.reader(stream)
         
         headers = next(csv_input, None)
@@ -490,8 +585,7 @@ def upload_statement():
             }
             new_txs.append(tx_obj)
             
-        user_id = request.headers.get('X-User-Id')
-        if not user_id: return jsonify({'error': 'Unauthorized'}), 401
+        
         
         for t in new_txs:
             t['user_id'] = user_id
@@ -509,3 +603,42 @@ def upload_statement():
 
 if __name__ == '__main__':
     app.run(port=8000, debug=True)
+
+@app.route('/api/transactions/<tx_id>/confirm-p2p', methods=['POST'])
+@token_required
+def confirm_p2p(user_id, tx_id):
+    data = request.json
+    category = data.get('category')
+    reason = data.get('reason')
+    tags = data.get('tags', [])
+    
+    res = supabase.table('pending_confirmations').select('*').eq('id', tx_id).eq('user_id', user_id).execute()
+    if not res.data:
+        return jsonify({'error': 'Transaction not found'}), 404
+        
+    pending = res.data[0]
+    confirmed = {
+        'id': pending['id'],
+        'user_id': user_id,
+        'date': pending['date'],
+        'description': pending['description'],
+        'category': category,
+        'flow': pending['flow'],
+        'amount': pending['amount'],
+        'reason': reason,
+        'tags': tags
+    }
+    
+    supabase.table('transactions').insert(confirmed).execute()
+    supabase.table('pending_confirmations').delete().eq('id', tx_id).eq('user_id', user_id).execute()
+    return jsonify({'status': 'success', 'transaction': confirmed})
+
+@app.route('/api/transactions/seed', methods=['POST'])
+@token_required
+def seed_db(user_id):
+    try:
+        supabase.table('transactions').delete().eq('user_id', user_id).execute()
+        seed_user_transactions(user_id)
+        return jsonify({'status': 'success', 'message': 'Database seeded successfully'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500

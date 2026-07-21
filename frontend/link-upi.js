@@ -119,11 +119,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 ? 'http://localhost:8000/api' 
                 : '/api';
 
-            const userStr = localStorage.getItem('user');
+            const token = localStorage.getItem('token');
             const headers = {};
-            if (userStr) {
-                const user = JSON.parse(userStr);
-                headers['X-User-Id'] = user.id;
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
             }
 
             const response = await fetch(`${API_BASE}/upload-statement`, {

@@ -327,6 +327,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (res.ok) {
                 localStorage.setItem('user', JSON.stringify(data.user));
+                if (data.token) localStorage.setItem('token', data.token);
                 setTimeout(triggerCardExit, 200);
             } else {
                 throw new Error(data.error || 'Login failed');
@@ -363,6 +364,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (res.ok) {
                 localStorage.setItem('user', JSON.stringify(data.user));
+                if (data.token) localStorage.setItem('token', data.token);
                 setTimeout(triggerCardExit, 200);
             } else {
                 throw new Error(data.error || 'Signup failed');
@@ -410,6 +412,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 .then(dbData => {
                                     if (dbData.status === 'success') {
                                         localStorage.setItem('user', JSON.stringify(dbData.user));
+                                        if (dbData.token) localStorage.setItem('token', dbData.token);
                                         triggerGoogleCardExit(name, email);
                                     } else {
                                         throw new Error(dbData.error || 'Google auth failed');

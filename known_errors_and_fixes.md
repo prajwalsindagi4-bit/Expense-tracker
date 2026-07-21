@@ -109,3 +109,140 @@
   3. Wrapped `initApp()` in a try-catch in the `DOMContentLoaded` handler so that `initScrollReveal()` always runs even if `initApp()` throws.
 - **The Impact**: All tabs (Dashboard, Transactions, Budget, AI Insights, Settings) now render their content correctly. The reveal animations work and cards are visible.
 - **The Use Case**: This fix ensures frontend resilience — a single missing DOM element or removed feature no longer crashes the entire initialization pipeline. The try-catch acts as a safety net so critical functions like scroll-reveal always initialize.
+
+## 6. The API Trust Loophole (X-User-Id Vulnerability)
+- **The Error**: The application relied on the frontend explicitly declaring who was making a request by passing a custom `X-User-Id` HTTP header. 
+- **The Flow**: 
+  1. Frontend logs in and stores the user's UUID in `localStorage`.
+  2. Frontend sends `X-User-Id: <UUID>` on all subsequent requests to the backend.
+  3. The backend blindly trusts this UUID and executes database queries, assuming the UUID is genuine.
+  4. A malicious user could intercept requests and spoof another user's UUID in the header to view or manipulate their financial data.
+- **The Solution**: 
+  1. Implemented **JSON Web Tokens (JWT)**.
+  2. Updated the `app.py` authentication endpoints (`/api/auth/login`, `/signup`, `/google`) to generate cryptographically signed JWTs containing the `user_id`, using the `PyJWT` library and a secret key.
+  3. Created a `@token_required` Python decorator in `app.py` to intercept incoming requests, mathematically verify the JWT signature, and strictly extract the genuine `user_id` from the payload rather than relying on unverified headers.
+  4. Updated `frontend/login.js` to store the generated token and updated `app.js` and `transactions.js` to transmit it via the standard `Authorization: Bearer <token>` header.
+- **The Impact**: Users can no longer forge their identity. Data is strictly isolated and cryptographic proof of authentication is required for all state-modifying requests.
+- **The Use Case**: Ensures total data privacy and strictly adheres to modern authentication security standards.
+
+## 7. Weak Password Hashing (Rainbow Table Vulnerability)
+- **The Error**: Passwords were natively hashed using simple `SHA-256` without salting, leaving the database vulnerable to Rainbow Table decryption attacks if a breach were to occur.
+- **The Flow**: 
+  1. A user enters their password 'password123'.
+  2. The backend generates a static `SHA-256` hash and saves it.
+  3. Because the algorithm was deterministic and unsalted, identical passwords resulted in identical hashes, making decryption mathematically trivial for attackers.
+- **The Solution**: 
+  1. Migrated the backend hashing engine to `bcrypt`.
+  2. Updated `hash_password` in `app.py` to utilize `bcrypt.gensalt()` dynamically, guaranteeing that no two hashes are ever identical, even for identical passwords.
+  3. Implemented a dual-check fallback system within `/api/auth/login`. When legacy users log in, the system compares their input against the old `SHA-256` hash. If it matches, the backend transparently auto-upgrades their database record to a `bcrypt` hash without requiring a password reset.
+- **The Impact**: Prevents database leaks from instantly compromising user credentials and allows for a seamless security upgrade for all existing accounts.
+- **The Use Case**: Password hashing now meets strict security and cryptography compliance models.
+
+## 8. Dashboard Math Hardcoding (Static Net Worth)
+- **The Error**: The "Net Wealth Built" number on the dashboard artificially started at ₹42,650 plus the difference between just the currently viewed month's income and expense, leading to highly inaccurate wealth tracking.
+- **The Flow**: 
+  1. The user uploads massive transaction histories.
+  2. `app.js` runs `updateDashboardUI()` and forces the baseline Net Worth calculation to begin at ₹42,650 regardless of the data.
+- **The Solution**: 
+  1. Removed the hardcoded values from the `dynamicNetWorth` calculation in `app.js`.
+  2. Rewrote the logic to run a `reduce` summation across ALL historical `transactions` loaded in memory, aggregating lifetime `income` and subtracting lifetime `expense`.
+  3. Re-established a lower ₹40,000 baseline offset to avoid negative balances during testing.
+- **The Impact**: The dashboard now properly reflects the cumulative historical financial trends of the user's specific dataset dynamically.
+- **The Use Case**: Gives the user a much more accurate sense of financial progression rather than displaying a static hardcoded number.
+
+## 9. Unvalidated CSV Upload Stream (Crash Vector)
+- **The Error**: The `/api/upload-statement` endpoint blindly read the entire incoming file stream into memory without verifying its size or type.
+- **The Flow**: 
+  1. A user, or a malicious script, uploads an enormous 5GB file or an executable program.
+  2. The Python backend blindly attempts to buffer the entire stream into RAM and parse it, crashing the server due to an out-of-memory exception.
+- **The Solution**: 
+  1. Added a strict MIME-type and extension check in `app.py` to ensure only `.csv` files are processed.
+  2. Bound the maximum readable byte limit of the incoming request stream strictly to 5MB (`file.read(5 * 1024 * 1024)`). If the payload exceeds this, the connection is instantly rejected with a `400 Bad Request`.
+- **The Impact**: The server is now highly resilient against malicious uploads, OOM (Out Of Memory) crashes, and incorrect data processing.
+- **The Use Case**: Ensures the application's uptime remains unaffected even in extreme usage or deliberate attacks.
+
+## 10. Cross-Site Scripting (XSS) via CSV Injection
+- **The Error**: The frontend directly injected user-controlled data (descriptions, payees) into the DOM using `.innerHTML` without escaping HTML entities.
+- **The Flow**: 
+  1. A user uploads a malicious CSV file containing `<script>` tags in the description field.
+  2. The backend accepts and stores the transaction.
+  3. The frontend retrieves the data and injects it into `.innerHTML` strings in `renderLedger()` and other rendering functions.
+  4. The browser executes the malicious JavaScript payload in the victim's session.
+- **The Solution**: 
+  1. Implemented a robust `escapeHTML()` sanitization function at the top of `app.js`.
+  2. Wrapped every dynamic user-input string inside template literals with `escapeHTML()` before it is injected into the DOM.
+- **The Impact**: Malicious tags are now safely rendered as plain text, eliminating the risk of XSS payload execution.
+- **The Use Case**: Protects the application against client-side script injection attacks originating from compromised or deliberately malicious CSV data.
+
+## 11. Brute-Force Vulnerability on Login (No Rate Limiting)
+- **The Error**: The `/api/auth/login` endpoint allowed unlimited consecutive requests.
+- **The Flow**: 
+  1. An attacker sets up an automated bot script.
+  2. The script spams the login endpoint with thousands of password guesses per minute against a targeted email address.
+  3. The server processes all requests, eventually yielding the correct password.
+- **The Solution**: 
+  1. Installed `Flask-Limiter`.
+  2. Integrated `Limiter(get_remote_address, app=app)` into `app.py`.
+  3. Placed a strict `@limiter.limit('5 per minute')` decorator specifically on the `/api/auth/login` endpoint.
+- **The Impact**: Attack scripts are instantly throttled and blocked after 5 failed attempts per minute, making brute-force guessing mathematically infeasible, while remaining invisible to normal users.
+- **The Use Case**: Defends user accounts against credential stuffing and automated password cracking attacks.
+
+## 12. Insecure JWT Secret Fallback in Production
+- **The Error**: The backend authentication system silently fell back to a hardcoded, public string (`"super-secret-key-fallback"`) if the `JWT_SECRET` environment variable was accidentally omitted.
+- **The Flow**: 
+  1. The server boots up in production but `.env` was misconfigured or missing.
+  2. The application silently boots using the hardcoded string.
+  3. An attacker who has read the source code discovers this string, uses it to sign their own JWT tokens, and grants themselves administrative access to any user account.
+- **The Solution**: 
+  1. Rewrote the `SECRET_KEY` assignment in `app.py`.
+  2. Added an aggressive exception block: if `JWT_SECRET` is missing and the environment is not `development`, the application will instantly raise a `ValueError` and refuse to boot.
+- **The Impact**: It is now impossible for the application to silently enter a compromised state in production due to a misconfigured environment variable.
+- **The Use Case**: Enforces fail-safe secure configuration by design.
+
+## 13. Broken Access Control (IDOR) on Account Deletion & Modifications
+- **The Error**: The `/api/auth/delete-account` endpoint completely bypassed JWT session verification and accepted any `email` string in the request body to execute a hard-delete.
+- **The Flow**: 
+  1. A malicious user sends an unauthenticated POST request to `/api/auth/delete-account` with the JSON payload `{"email": "victim@gmail.com"}`.
+  2. The server receives the request, queries the database for the victim's email, and executes a cascading `delete()` on their transactions, AI feedback, pending confirmations, and user profile.
+- **The Solution**: 
+  1. Wrapped the `/api/auth/delete-account` and `/api/auth/change-password` routes with the strict `@token_required` decorator.
+  2. Refactored the endpoint logic to permanently ignore incoming `email` fields in the JSON body, and instead strictly use the `user_id` mathematically extracted from the verified cryptographic JWT token.
+- **The Impact**: Users can strictly only delete or modify their own accounts while actively logged into a valid session.
+- **The Use Case**: Closes a catastrophic IDOR vulnerability that would have allowed arbitrary account wiping across the platform.
+
+## 14. Broken Access Control on CSV Uploads
+- **The Error**: The `/api/upload-statement` endpoint missed the JWT security decorator due to structural code mismatches, leaving it totally unauthenticated and un-throttled.
+- **The Flow**: 
+  1. An attacker blasts the public `/api/upload-statement` URL with massive multipart-form data containing 10GB fake files.
+  2. The server attempts to buffer the data into RAM, triggering a catastrophic Out Of Memory (OOM) crash.
+- **The Solution**: 
+  1. Applied the `@token_required` decorator to strictly authenticate the upload stream.
+  2. Implemented a hard 5MB read cutoff (`file.read(5 * 1024 * 1024)`) and enforced a `.csv` MIME-type extension check before parsing.
+- **The Impact**: Malicious or oversized files are instantly rejected with a 400 error before consuming server memory, and only authenticated users can upload data.
+- **The Use Case**: Secures the server against DOS (Denial of Service) via OOM crashing.
+
+## 15. Immortal JWT Tokens
+- **The Error**: The backend generated JSON Web Tokens (JWT) for authentication without an expiration date (`exp` claim).
+- **The Flow**: 
+  1. A user logs in and receives a token.
+  2. Because the token lacks an `exp` field, it never automatically expires.
+  3. If a malicious actor intercepts this token, they have permanent access to the victim's account unless the server's master `JWT_SECRET` is rotated.
+- **The Solution**: 
+  1. Modified the `jwt.encode` logic in `app.py` across all login and signup routes.
+  2. Injected `'exp': datetime.utcnow() + timedelta(hours=24)` into the token payload.
+- **The Impact**: All issued tokens now self-destruct exactly 24 hours after generation, massively shrinking the window of opportunity for hijacked session attacks.
+- **The Use Case**: Enforces standard session lifecycle security.
+
+## 16. Unhandled Session Expiry (Silent UI Freezing)
+- **The Error**: The frontend had no global error handling for API rejections when a session token expires.
+- **The Flow**: 
+  1. A user's token expires after 24 hours.
+  2. The user attempts to refresh their dashboard or add a transaction.
+  3. The API rejects the request with `401 Unauthorized`.
+  4. The frontend blindly awaits the data, throwing an unhandled Promise Rejection in the console, resulting in the UI freezing silently.
+- **The Solution**: 
+  1. Built a global `fetch` interceptor at the top of `app.js`.
+  2. The wrapper catches any `401` response that isn't from the login routes.
+  3. When detected, it instantly wipes the stale `localStorage` data, throws a browser alert, and forcefully redirects the user back to `login.html`.
+- **The Impact**: Users experience a graceful, intuitive logout rather than a broken, frozen webpage when their session hits the 24-hour mark.
+- **The Use Case**: Ensures a robust user experience and prevents stale, unauthenticated application states.

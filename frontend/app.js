@@ -1,3 +1,15 @@
+// --- Security Sanitization ---
+function escapeHTML(str) {
+    if (str === null || str === undefined) return '';
+    if (typeof str !== 'string') str = String(str);
+    return str.replace(/&/g, '&amp;')
+              .replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;')
+              .replace(/"/g, '&quot;')
+              .replace(/'/g, '&#39;');
+}
+// -----------------------------
+
 // Manmo AI — Orchestrator & UI Controller
 
 let wealthChartInstance = null;
@@ -26,6 +38,7 @@ function initApp() {
     
     // Build dynamic spendings filter based on loaded data
     buildSpendingsFilter();
+    buildDashboardFilter();
 
     // 2. Navigation routing
     const navItems = document.querySelectorAll('.nav-item');
@@ -162,11 +175,10 @@ function initApp() {
                     ? 'http://localhost:8000/api' 
                     : '/api';
                 
-                const userStr = localStorage.getItem('user');
+                const token = localStorage.getItem('token');
                 const headers = {};
-                if (userStr) {
-                    const user = JSON.parse(userStr);
-                    headers['X-User-Id'] = user.id;
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
                 }
                 
                 const response = await fetch(`${API_BASE}/upload-statement`, {
@@ -193,9 +205,112 @@ function initApp() {
 
     // Initial render
     updateDashboardUI();
+    updateCategoryDropdowns();
     renderOpportunitiesAndSpots();
     if (typeof initSandboxChart === 'function') initSandboxChart();
     if (typeof runSandboxSimulation === 'function') runSandboxSimulation();
+
+    // 10. Change Password functionality
+    const btnChangePassword = document.getElementById('btn-change-password');
+    if (btnChangePassword) {
+        btnChangePassword.addEventListener('click', async () => {
+            const currentPassword = document.getElementById('settings-current-password').value;
+            const newPassword = document.getElementById('settings-new-password').value;
+            
+            if (!currentPassword || !newPassword) {
+                showToast('Error', 'Please fill in both password fields.', 'danger');
+                return;
+            }
+            
+            // Show loading state
+            btnChangePassword.innerHTML = '<i class="lucide-loader" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 6px;"></i>Updating...';
+            btnChangePassword.disabled = true;
+            
+            try {
+                const res = await fetch('/api/auth/change-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: authUser.email,
+                        current_password: currentPassword,
+                        new_password: newPassword
+                    })
+                });
+                const data = await res.json();
+                
+                if (!res.ok) throw new Error(data.error || 'Failed to change password');
+                
+                showToast('Success', 'Your password has been securely updated.', 'success');
+                document.getElementById('settings-current-password').value = '';
+                document.getElementById('settings-new-password').value = '';
+            } catch (err) {
+                showToast('Error', err.message, 'danger');
+            } finally {
+                btnChangePassword.innerHTML = 'Update Password';
+                btnChangePassword.disabled = false;
+            }
+        });
+    }
+
+    // 11. Delete Account functionality
+    const btnDeleteAccount = document.getElementById('btn-delete-account');
+    if (btnDeleteAccount) {
+        btnDeleteAccount.addEventListener('click', async () => {
+            const confirmed = confirm('DANGER: Are you absolutely sure you want to permanently delete your account? This will securely wipe all your transactions, AI feedback, and settings from the database. This action CANNOT be undone.');
+            if (!confirmed) return;
+            
+            try {
+                const res = await fetch('/api/auth/delete-account', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': Bearer 
+                    }
+                });
+                const data = await res.json();
+                
+                if (!res.ok) throw new Error(data.error || 'Failed to delete account');
+                
+                alert('Your account and all associated data have been securely deleted.');
+                logout();
+            } catch (err) {
+                showToast('Error', err.message, 'danger');
+            }
+        });
+    }
+
+    // 12. Download Budget PDF functionality
+    const btnDownloadBudget = document.getElementById('btn-download-budget-pdf');
+    if (btnDownloadBudget) {
+        btnDownloadBudget.addEventListener('click', () => {
+            const element = document.getElementById('budget-comparison-card');
+            if (!element) return;
+            
+            const opt = {
+                margin:       0.5,
+                filename:     `Budget_Report_${new Date().toLocaleDateString().replace(/\\//g, '-')}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#0f172a' },
+                jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+            
+            // Add a temporary class to fix some styling for PDF output
+            element.style.background = '#0f172a'; // force dark bg
+            
+            // Disable button during generation
+            btnDownloadBudget.innerHTML = '<i data-lucide="loader" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 6px;"></i>Generating...';
+            btnDownloadBudget.disabled = true;
+            lucide.createIcons();
+            
+            html2pdf().set(opt).from(element).save().then(() => {
+                element.style.background = ''; // restore
+                btnDownloadBudget.innerHTML = '<i data-lucide="download" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 6px;"></i>Download PDF';
+                btnDownloadBudget.disabled = false;
+                lucide.createIcons();
+                showToast('Success', 'Budget PDF generated successfully.', 'success');
+            });
+        });
+    }
 }
 
 // Tab switcher route control — Premium transition
@@ -238,6 +353,7 @@ function switchTab(tabId) {
         // Trigger chart refreshes or canvas resets if needed
         if (tabId === 'dashboard') {
             updateDashboardUI();
+    updateCategoryDropdowns();
         } else if (tabId === 'transactions') {
             renderLedger();
         } else if (tabId === 'spendings') {
@@ -280,7 +396,7 @@ function updateDashboardUI() {
     healthData.factors.forEach(f => {
         factorsHtml += `
             <div class="health-factor-item">
-                <span style="font-weight:500;">${f.name}</span>
+                <span style="font-weight:500;">${escapeHTML(f.name)}</span>
                 <span style="color: ${f.score >= 80 ? 'var(--success)' : f.score >= 50 ? 'var(--warning)' : 'var(--danger)'}; font-weight:600;">
                     ${f.score}/100
                 </span>
@@ -289,16 +405,16 @@ function updateDashboardUI() {
     });
     factorsList.innerHTML = factorsHtml;
 
-    // 2. Update stats indicators dynamically based on most recent transaction date
-    let currentMonthNum = new Date().getMonth();
-    let currentYear = new Date().getFullYear();
+    // 2. Update stats indicators dynamically based on selected dashboard filter
+    let currentMonthNum = -1;
+    let currentYear = -1;
     
-    if (transactions.length > 0) {
-        // Find the most recent date in the transactions
-        const latestDateStr = transactions.reduce((latest, t) => t.date > latest ? t.date : latest, '1970-01-01');
-        const latestDate = new Date(latestDateStr);
-        currentMonthNum = latestDate.getMonth();
-        currentYear = latestDate.getFullYear();
+    const dMonthSelect = document.getElementById('dashboard-month-select');
+    const dYearSelect = document.getElementById('dashboard-year-select');
+    
+    if (dMonthSelect && dMonthSelect.value !== 'none' && dYearSelect && dYearSelect.value !== 'none') {
+        currentMonthNum = parseInt(dMonthSelect.value);
+        currentYear = parseInt(dYearSelect.value);
     }
     
     const thisMonthTxs = transactions.filter(t => {
@@ -310,12 +426,17 @@ function updateDashboardUI() {
 
     const spentThisMonth = sumFlow(thisMonthTxs, 'expense');
     const investedThisMonth = sumFlow(thisMonthTxs, 'investment');
-    const incomeThisMonth = sumFlow(thisMonthTxs, 'income') || 4500; // Fallback to paycheck
+    const incomeThisMonth = sumFlow(thisMonthTxs, 'income');
 
-    const savingsRate = Math.round(((incomeThisMonth - spentThisMonth) / incomeThisMonth) * 100);
+    const savingsRate = incomeThisMonth > 0 ? Math.round(((incomeThisMonth - spentThisMonth) / incomeThisMonth) * 100) : 0;
+
+    // Calculate historic net worth from all transactions
+    const totalHistoricIncome = sumFlow(transactions, 'income');
+    const totalHistoricExpense = sumFlow(transactions, 'expense');
+    const dynamicNetWorth = 40000 + (totalHistoricIncome - totalHistoricExpense);
 
     // Animate stat values with counting effect
-    animateStatValue('stat-networth', 42650 + (incomeThisMonth - spentThisMonth), '₹', true);
+    animateStatValue('stat-networth', dynamicNetWorth, '₹', true);
     animateStatValue('stat-spent', spentThisMonth, '₹', true);
     animateStatValue('stat-invested', investedThisMonth, '₹', true);
     animateStatValue('stat-savingsrate', Math.max(0, savingsRate), '', false, '%');
@@ -324,6 +445,8 @@ function updateDashboardUI() {
     let narrativeText = "";
     if (transactions.length === 0) {
         narrativeText = "<h3>Awaiting Data Integration</h3><p>Upload your bank statements in the Settings tab to let ManMo generate personalized insights and track your wealth journey.</p>";
+    } else if (thisMonthTxs.length === 0) {
+        narrativeText = "<h3>Select a Statement</h3><p>Please select a month and year from the dropdown above to view AI-generated insights and financial breakdowns for that period.</p>";
     } else {
         narrativeText = generateFinancialStory(transactions);
     }
@@ -446,7 +569,46 @@ const BUDGET_PRESETS = {
 };
 
 // Default budget categories with their transaction category mappings
-let budgetCategories = JSON.parse(JSON.stringify(BUDGET_PRESETS['50-30-20']));
+
+function updateCategoryDropdowns() {
+    const expenseSelect = document.getElementById('expense-category');
+    if (!expenseSelect) return;
+    
+    // Clear existing options
+    expenseSelect.innerHTML = '';
+    
+    // Always add Income first
+    const incomeGroup = document.createElement('optgroup');
+    incomeGroup.label = 'Income (Inflow)';
+    incomeGroup.innerHTML = '<option value="Income">Income</option>';
+    expenseSelect.appendChild(incomeGroup);
+    
+    // Add dynamic budget buckets
+    budgetCategories.forEach(bucket => {
+        const group = document.createElement('optgroup');
+        group.label = bucket.name;
+        
+        if (bucket.txCategories && bucket.txCategories.length > 0) {
+            bucket.txCategories.forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat;
+                opt.textContent = cat;
+                group.appendChild(opt);
+            });
+        } else {
+            // If no specific txCategories, just use the bucket name itself
+            const opt = document.createElement('option');
+            opt.value = bucket.name;
+            opt.textContent = bucket.name;
+            group.appendChild(opt);
+        }
+        expenseSelect.appendChild(group);
+    });
+}
+
+let budgetCategories = localStorage.getItem('budgetCategories') 
+    ? JSON.parse(localStorage.getItem('budgetCategories')) 
+    : JSON.parse(JSON.stringify(BUDGET_PRESETS['50-30-20']));
 
 function renderBudgetComparison() {
     const allTxs = transactions;
@@ -463,11 +625,28 @@ function renderBudgetComparison() {
         if (!list) return;
         list.innerHTML = '';
 
+        // Extract unique categories from all transactions for the pill selector
+        const allUniqueCategories = [...new Set(transactions.map(t => t.category || 'Miscellaneous'))].sort();
+
         budgetCategories.forEach((cat, idx) => {
             const row = document.createElement('div');
             row.style.cssText = 'display: flex; gap: 0.75rem; align-items: center; padding: 0.5rem 0.75rem; background: rgba(255,255,255,0.02); border-radius: 6px; border: 1px solid rgba(255,255,255,0.05);';
+            
+            let pillsHtml = '';
+            allUniqueCategories.forEach(txCat => {
+                const isActive = (cat.txCategories || []).includes(txCat);
+                const bg = isActive ? 'var(--primary)' : 'rgba(255,255,255,0.05)';
+                const color = isActive ? 'white' : 'var(--text-muted)';
+                pillsHtml += `<span class="budget-cat-pill" data-idx="${idx}" data-txcat="${txCat}" style="cursor:pointer; display:inline-block; padding:2px 6px; font-size:0.7rem; background:${bg}; color:${color}; border-radius:4px; border:1px solid rgba(255,255,255,0.1); user-select:none; transition:all 0.2s;">${txCat}</span>`;
+            });
+            
             row.innerHTML = `
-                <input type="text" value="${cat.name}" data-idx="${idx}" class="budget-cat-name" style="flex: 1; padding: 0.4rem 0.6rem; font-size: 0.9rem; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 4px; min-width: 120px;">
+                <div style="display: flex; flex-direction: column; gap: 0.5rem; flex: 1;">
+                    <input type="text" value="${escapeHTML(cat.name)}" data-idx="${idx}" class="budget-cat-name" placeholder="Bucket Name" style="width: 100%; padding: 0.4rem 0.6rem; font-size: 0.9rem; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 4px;">
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.25rem; max-height: 42px; overflow-y: auto; padding-right: 5px;" class="custom-scrollbar">
+                        ${pillsHtml}
+                    </div>
+                </div>
                 <div style="display: flex; align-items: center; gap: 0.25rem;">
                     <input type="number" value="${cat.pct}" data-idx="${idx}" class="budget-cat-pct" style="width: 65px; padding: 0.4rem 0.5rem; font-size: 0.9rem; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 4px; text-align: center;" min="0" max="100">
                     <span style="color: var(--text-muted); font-size: 0.85rem;">%</span>
@@ -499,6 +678,26 @@ function renderBudgetComparison() {
             input.addEventListener('input', (e) => {
                 const idx = parseInt(e.target.dataset.idx);
                 budgetCategories[idx].name = e.target.value;
+                markCustom();
+            });
+        });
+
+        // Attach linked categories listeners (pill toggle)
+        list.querySelectorAll('.budget-cat-pill').forEach(pill => {
+            pill.addEventListener('click', (e) => {
+                const idx = parseInt(e.target.dataset.idx);
+                const txCat = e.target.dataset.txcat;
+                if (!budgetCategories[idx].txCategories) budgetCategories[idx].txCategories = [];
+                
+                if (budgetCategories[idx].txCategories.includes(txCat)) {
+                    budgetCategories[idx].txCategories = budgetCategories[idx].txCategories.filter(c => c !== txCat);
+                    e.target.style.background = 'rgba(255,255,255,0.05)';
+                    e.target.style.color = 'var(--text-muted)';
+                } else {
+                    budgetCategories[idx].txCategories.push(txCat);
+                    e.target.style.background = 'var(--primary)';
+                    e.target.style.color = 'white';
+                }
                 markCustom();
             });
         });
@@ -561,14 +760,16 @@ function renderBudgetComparison() {
             if (cat.flow === 'investment') {
                 actual = allTxs.filter(t => t.flow === 'investment').reduce((s, t) => s + parseFloat(t.amount), 0);
             } else {
-                actual = allTxs.filter(t => cat.txCategories.includes(t.category) && t.flow === 'expense')
-                               .reduce((s, t) => s + parseFloat(t.amount), 0);
+                actual = allTxs.filter(t => {
+                    const mappedCats = (cat.txCategories || []).map(c => c.toLowerCase());
+                    return t.flow === 'expense' && mappedCats.includes((t.category || '').toLowerCase());
+                }).reduce((s, t) => s + parseFloat(t.amount), 0);
             }
             const diff = ideal - actual;
             const border = idx < budgetCategories.length - 1 ? 'border-bottom: 1px solid rgba(255,255,255,0.05);' : '';
             rows += `
                 <tr style="${border}">
-                    <td style="padding: 0.75rem 1rem; color: #fff;">${cat.name}</td>
+                    <td style="padding: 0.75rem 1rem; color: #fff;">${escapeHTML(cat.name)}</td>
                     <td style="padding: 0.75rem 1rem;">${cat.pct}%</td>
                     <td style="padding: 0.75rem 1rem;">${formatMoney(ideal)}</td>
                     <td style="padding: 0.75rem 1rem;">${formatMoney(actual)}</td>
@@ -656,7 +857,7 @@ function renderBudgetComparison() {
                 return;
             }
 
-            const flow = category === 'Investments' ? 'investment' : 'expense';
+            const flow = category === 'Income' ? 'income' : category === 'Investments' ? 'investment' : 'expense';
             const newTx = {
                 id: 'manual-' + Date.now(),
                 description: desc,
@@ -729,10 +930,10 @@ function renderLedger(filter = 'all', searchQuery = '') {
         const badgeClass = tx.flow === 'income' ? 'badge-income' : tx.flow === 'investment' ? 'badge-investment' : tx.flow === 'expense' ? 'badge-expense' : 'badge-transfer';
 
         // Reason context label
-        const reasonHtml = tx.reason ? `<span class="reason-pill">${tx.reason}</span>` : '';
+        const reasonHtml = tx.reason ? `<span class="reason-pill">${escapeHTML(tx.reason)}</span>` : '';
         
         // Tag list
-        const tagsHtml = tx.tags ? tx.tags.map(tag => `<span class="badge badge-tag">${tag}</span>`).join(' ') : '';
+        const tagsHtml = tx.tags ? tx.tags.map(tag => `<span class="badge badge-tag">${escapeHTML(tag)}</span>`).join(' ') : '';
 
         // Formatted Date
         const dateObj = new Date(tx.date);
@@ -743,19 +944,19 @@ function renderLedger(filter = 'all', searchQuery = '') {
             categoryHtml = `
                 <select class="category-select" data-id="${tx.id}" style="background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border); color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.85rem; outline: none; cursor: pointer;">
                     <option value="Miscellaneous" selected>Miscellaneous</option>
-                    <option value="Food">Food</option>
-                    <option value="Travel">Travel</option>
-                    <option value="Shopping">Shopping</option>
-                    <option value="Utilities">Utilities</option>
-                    <option value="Rent">Rent</option>
-                    <option value="Bills">Bills</option>
                     <option value="Income">Income</option>
-                    <option value="Investments">Investments</option>
+                    ${budgetCategories.map(bucket => {
+                        if (bucket.txCategories && bucket.txCategories.length > 0) {
+                            return bucket.txCategories.map(cat => `<option value="${escapeHTML(cat)}">${escapeHTML(cat)}</option>`).join('');
+                        } else {
+                            return `<option value="${escapeHTML(bucket.name)}">${escapeHTML(bucket.name)}</option>`;
+                        }
+                    }).join('')}
                     <option value="Other">Other</option>
                 </select>
             `;
         } else {
-            categoryHtml = `<span class="badge ${badgeClass}">${tx.category}</span>`;
+            categoryHtml = `<span class="badge ${badgeClass}">${escapeHTML(tx.category)}</span>`;
         }
 
         htmlContent += `
@@ -764,7 +965,7 @@ function renderLedger(filter = 'all', searchQuery = '') {
                     ${formattedDate}
                 </div>
                 <div style="flex: 1 1 200px; display: flex; flex-direction: column; gap: 0.25rem;">
-                    <span style="font-weight: 500; font-size: 1.05rem; color: var(--text-primary);">${tx.description}</span>
+                    <span style="font-weight: 500; font-size: 1.05rem; color: var(--text-primary);">${escapeHTML(tx.description)}</span>
                     ${reasonHtml ? `<div style="margin-top: 0.2rem;">${reasonHtml}</div>` : ''}
                 </div>
                 <div style="flex: 0 0 auto;">
@@ -810,7 +1011,8 @@ function renderLedger(filter = 'all', searchQuery = '') {
                     const currentFilter = document.querySelector('#tx-filter-container .active')?.getAttribute('data-filter') || 'all';
                     const currentSearch = document.getElementById('tx-search-input')?.value || '';
                     renderLedger(currentFilter, currentSearch);
-                    updateDashboardUI(); // update overall dashboard stats
+                    updateDashboardUI();
+    updateCategoryDropdowns(); // update overall dashboard stats
                 } else {
                     alert("Failed to update category");
                     e.target.disabled = false;
@@ -915,6 +1117,7 @@ async function submitP2PConfirmation() {
 
     // Refresh views
     updateDashboardUI();
+    updateCategoryDropdowns();
     renderLedger();
     checkPendingConfirmationsInbox();
     renderOpportunitiesAndSpots();
@@ -926,7 +1129,18 @@ async function submitP2PConfirmation() {
 // Dynamically build Year and Month selectors based on transaction data
 function buildSpendingsFilter() {
     const container = document.getElementById('spendings-filter-container');
-    if (!container || transactions.length === 0) return;
+    if (!container) return;
+    
+    if (transactions.length === 0) {
+        container.innerHTML = `
+            <input type="hidden" id="spendings-year-select" value="${new Date().getFullYear()}">
+            <select class="form-input" id="spendings-month-select" style="width: 150px; padding: 0.5rem 0.75rem; font-size: 0.85rem;">
+                <option value="${new Date().getMonth()}">No Data</option>
+            </select>
+        `;
+        document.getElementById('spendings-month-select').addEventListener('change', renderSpendings);
+        return;
+    }
     
     // Extract unique years and months from data
     const availableDates = {};
@@ -999,6 +1213,82 @@ function buildSpendingsFilter() {
     });
 }
 
+function buildDashboardFilter() {
+    const container = document.getElementById('dashboard-filter-container');
+    if (!container) return;
+    
+    if (transactions.length === 0) {
+        container.innerHTML = `
+            <select class="form-input" id="dashboard-month-select" style="width: 170px; padding: 0.5rem 0.75rem; font-size: 0.85rem;" disabled>
+                <option value="none">No Data Available</option>
+            </select>
+        `;
+        return;
+    }
+    
+    // Extract unique years and months from data
+    const availableDates = {};
+    transactions.forEach(t => {
+        const d = new Date(t.date);
+        const y = d.getFullYear();
+        const m = d.getMonth();
+        if (!availableDates[y]) availableDates[y] = new Set();
+        availableDates[y].add(m);
+    });
+    
+    const years = Object.keys(availableDates).map(y => parseInt(y)).sort((a,b) => b - a); // Descending
+    
+    let html = '';
+    
+    html += `<select class="form-input" id="dashboard-year-select" style="width: 100px; padding: 0.5rem 0.75rem; font-size: 0.85rem;">`;
+    years.forEach(y => {
+        html += `<option value="${y}">${y}</option>`;
+    });
+    html += `</select>`;
+    
+    html += `<select class="form-input" id="dashboard-month-select" style="width: 170px; padding: 0.5rem 0.75rem; font-size: 0.85rem;">`;
+    html += `</select>`;
+    
+    container.innerHTML = html;
+    
+    const yearSelect = document.getElementById('dashboard-year-select');
+    const monthSelect = document.getElementById('dashboard-month-select');
+    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    
+    const populateMonths = (yearStr) => {
+        if (yearStr === 'none') {
+            monthSelect.innerHTML = `<option value="none" selected>Select Statement...</option>`;
+            return;
+        }
+        const year = parseInt(yearStr);
+        const monthsForYear = Array.from(availableDates[year] || []).sort((a,b) => b - a);
+        
+        let mHtml = '';
+        monthsForYear.forEach(m => {
+            mHtml += `<option value="${m}">${monthNames[m]} ${years.length === 1 ? year : ''}</option>`;
+        });
+        monthSelect.innerHTML = mHtml;
+    };
+    
+    // Auto-select the most recent year
+    yearSelect.value = years[0];
+    if (years.length === 1) {
+        yearSelect.style.display = 'none'; // hide year select if only 1 year
+    }
+    populateMonths(years[0]);
+    
+    yearSelect.addEventListener('change', () => {
+        populateMonths(yearSelect.value);
+        updateDashboardUI();
+    updateCategoryDropdowns();
+    });
+    
+    monthSelect.addEventListener('change', () => {
+        updateDashboardUI();
+    updateCategoryDropdowns();
+    });
+}
+
 function renderSpendings() {
     const monthSelect = document.getElementById('spendings-month-select');
     const yearSelect = document.getElementById('spendings-year-select');
@@ -1059,6 +1349,8 @@ function renderSpendings() {
         return;
     }
 
+    let catHtml = '';
+
     sortedCategories.forEach(catName => {
         const cfg = catConfig[catName] || defaultCfg;
         const group = categoryMap[catName];
@@ -1071,13 +1363,13 @@ function renderSpendings() {
         group.items.forEach(tx => {
             const dateObj = new Date(tx.date);
             const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-            const reasonTag = tx.reason ? `<span class="reason-pill">${tx.reason}</span>` : '';
+            const reasonTag = tx.reason ? `<span class="reason-pill">${escapeHTML(tx.reason)}</span>` : '';
             const tagsText = tx.tags ? tx.tags.filter(t => t !== 'P2P').slice(0, 2).join(', ') : '';
 
             itemsHtml += `
                 <div class="spending-item-row">
                     <div class="spending-item-left">
-                        <span class="spending-item-name">${tx.description}</span>
+                        <span class="spending-item-name">${escapeHTML(tx.description)}</span>
                         <span class="spending-item-detail">
                             ${formattedDate}
                             ${reasonTag}
@@ -1274,6 +1566,7 @@ function handleSimulationResult(result) {
     } else if (result.status === 'auto_classified') {
         showToast('Auto-Classified', result.message, 'success');
         updateDashboardUI();
+    updateCategoryDropdowns();
         renderLedger();
         renderOpportunitiesAndSpots();
         renderSpendings();

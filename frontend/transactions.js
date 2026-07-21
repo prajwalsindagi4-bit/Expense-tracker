@@ -8,13 +8,12 @@ const API_BASE = window.location.hostname === 'localhost' || window.location.hos
     : '/api';
 
 function getAuthHeaders(baseHeaders = {}) {
-    const userStr = localStorage.getItem('user');
-    if (!userStr) {
+    const token = localStorage.getItem('token');
+    if (!token) {
         window.location.href = 'login.html';
         return baseHeaders;
     }
-    const user = JSON.parse(userStr);
-    return { ...baseHeaders, 'X-User-Id': user.id };
+    return { ...baseHeaders, 'Authorization': `Bearer ${token}` };
 }
 
 async function fetchInitialData() {
