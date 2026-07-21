@@ -109,16 +109,53 @@ function initApp() {
     // 9. Settings Data Sync
     const btnSyncData = document.getElementById('btn-sync-data');
     if (btnSyncData) {
-        btnSyncData.addEventListener('click', () => {
+        btnSyncData.addEventListener('click', async () => {
+            const fileInput = document.getElementById('csv-upload-input');
+            const file = fileInput && fileInput.files[0];
+            
             const btn = btnSyncData;
             const originalHTML = btn.innerHTML;
             btn.innerHTML = '<i data-lucide="loader-2" style="width:16px; height:16px; display:inline-block; vertical-align:middle; margin-right:6px;" class="spin"></i> Syncing...';
             lucide.createIcons();
-            
-            setTimeout(() => {
-                localStorage.setItem('hasDataUploaded', 'true');
-                window.location.reload();
-            }, 1000);
+
+            if (file) {
+                try {
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    
+                    const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+                        ? 'http://localhost:8000/api' 
+                        : '/api';
+                    
+                    const userStr = localStorage.getItem('user');
+                    const headers = {};
+                    if (userStr) {
+                        const user = JSON.parse(userStr);
+                        headers['X-User-Id'] = user.id;
+                    }
+                    
+                    const response = await fetch(`${API_BASE}/upload-statement`, {
+                        method: 'POST',
+                        headers: headers,
+                        body: formData
+                    });
+                    
+                    if (!response.ok) throw new Error('Upload failed');
+                    
+                    localStorage.setItem('hasDataUploaded', 'true');
+                    window.location.reload();
+                } catch (e) {
+                    console.error("Upload failed:", e);
+                    alert("Failed to upload statement.");
+                    btn.innerHTML = originalHTML;
+                    lucide.createIcons();
+                }
+            } else {
+                setTimeout(() => {
+                    localStorage.setItem('hasDataUploaded', 'true');
+                    window.location.reload();
+                }, 1000);
+            }
         });
     }
 
@@ -178,6 +215,8 @@ function switchTab(tabId) {
         } else if (tabId === 'split-expenses') {
             checkPendingConfirmationsInbox();
         }
+
+        if (window.triggerReveal) window.triggerReveal();
 
         // Re-initialize 3D tilt for cards in the new section
         setTimeout(() => init3DCardTilt(), 200);
@@ -585,7 +624,7 @@ function renderLedger(filter = 'all', searchQuery = '') {
 
     // Re-initialize scroll reveal so dynamically added items animate properly
     setTimeout(() => {
-        initScrollReveal();
+        if (window.triggerReveal) window.triggerReveal();
     }, 50);
 }
 
@@ -1033,10 +1072,13 @@ function runSandboxSimulation() {
 }
 
 // ──────── SCROLL REVEAL OBSERVER ────────
+let scrollObserverInstance = null;
+
 function initScrollReveal() {
+    if (scrollObserverInstance) return; // Prevent multiple initializations!
     const REVEAL_SELECTORS = '.reveal, .reveal-left, .reveal-scale';
 
-    const observer = new IntersectionObserver((entries) => {
+    scrollObserverInstance = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
                 entry.target.classList.add('visible');
@@ -1066,43 +1108,35 @@ function initScrollReveal() {
     function observeAll() {
         document.querySelectorAll(REVEAL_SELECTORS).forEach(el => {
             if (!el.classList.contains('visible')) {
-                observer.observe(el);
+                scrollObserverInstance.observe(el);
             }
         });
     }
 
-    // On tab switch: reveal new tab's elements with cascade
-    function onTabSwitch() {
-        // Give the DOM time to settle after display:none -> display:block
+    // Expose trigger logic to be called manually on tab switch or dynamic render
+    window.triggerReveal = function() {
+        // Give the DOM time to settle
         setTimeout(() => {
             const activeSection = document.querySelector('.page-section.active');
             if (!activeSection) return;
 
-            // Disconnect and re-observe to reset the IntersectionObserver state
             const elements = activeSection.querySelectorAll(REVEAL_SELECTORS);
             elements.forEach(el => {
-                observer.unobserve(el);
+                scrollObserverInstance.unobserve(el);
             });
 
             // Force a reflow so the observer sees fresh positions
             void activeSection.offsetHeight;
 
-            // Re-observe all elements
             elements.forEach(el => {
                 if (!el.classList.contains('visible')) {
-                    observer.observe(el);
+                    scrollObserverInstance.observe(el);
                 }
             });
 
-            // Also cascade reveal for elements already in the viewport
             revealActiveTab();
-        }, 120);
-    }
-
-    // Hook into nav clicks
-    document.querySelectorAll('.nav-item').forEach(item => {
-        item.addEventListener('click', onTabSwitch);
-    });
+        }, 50);
+    };
 
     // Initial reveal on page load
     revealActiveTab();

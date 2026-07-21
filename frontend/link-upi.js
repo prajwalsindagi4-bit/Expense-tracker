@@ -107,7 +107,47 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('main-dropzone').style.display = 'none';
         
         progressState.classList.add('active');
-        simulateParsing();
+        uploadFile(file);
+    }
+
+    async function uploadFile(file) {
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        try {
+            const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+                ? 'http://localhost:8000/api' 
+                : '/api';
+
+            const userStr = localStorage.getItem('user');
+            const headers = {};
+            if (userStr) {
+                const user = JSON.parse(userStr);
+                headers['X-User-Id'] = user.id;
+            }
+
+            const response = await fetch(`${API_BASE}/upload-statement`, {
+                method: 'POST',
+                headers: headers,
+                body: formData
+            });
+
+            if (!response.ok) {
+                throw new Error('Upload failed');
+            }
+
+            const data = await response.json();
+            simulateParsing(true); // Proceed with success animation
+        } catch (e) {
+            console.error("File upload failed:", e);
+            alert("Failed to upload the file. Please try again.");
+            isProcessing = false;
+            actionWrapper.style.display = 'flex';
+            document.getElementById('main-dropzone').style.display = 'flex';
+            progressState.classList.remove('active');
+            mainTitle.textContent = "Link your Bank";
+            mainSubtitle.textContent = "Upload your bank statement to populate the dashboard.";
+        }
     }
 
     function simulateParsing() {
