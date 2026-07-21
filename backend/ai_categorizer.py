@@ -108,6 +108,8 @@ TRAINING_DATA = [
     ("Kroger", "Food"), ("Safeway", "Food"), ("Aldi", "Food"),
     ("Cafe", "Food"), ("Restaurant", "Food"), ("Diner", "Food"),
     ("Bakers", "Food"), ("Coffee Shop", "Food"), ("Sushi Bar", "Food"),
+    ("Zomato", "Food"), ("Swiggy", "Food"), ("Blinkit", "Food"),
+    ("Zepto", "Food"), ("Instamart", "Food"), ("BigBasket", "Food"),
     
     # Travel
     ("Uber Ride", "Travel"), ("Lyft", "Travel"), ("Delta Airlines", "Travel"),
@@ -116,20 +118,27 @@ TRAINING_DATA = [
     ("Chevron", "Travel"), ("BART Transit", "Travel"), ("Train Ticket", "Travel"),
     ("Hotel Booking", "Travel"), ("Marriott", "Travel"), ("Hilton", "Travel"),
     ("Hertz Rental", "Travel"), ("Avis", "Travel"), ("Parking", "Travel"),
+    ("Ola Cabs", "Travel"), ("IRCTC", "Travel"), ("MakeMyTrip", "Travel"),
+    ("IndiGo", "Travel"), ("Air India", "Travel"), ("Vistara", "Travel"),
     
     # Shopping
-    ("Amazon.com", "Shopping"), ("Walmart", "Shopping"), ("Target", "Shopping"),
-    ("Best Buy", "Shopping"), ("Apple Store", "Shopping"), ("Home Depot", "Shopping"),
-    ("Lowe's", "Shopping"), ("IKEA", "Shopping"), ("Zara", "Shopping"),
-    ("H&M", "Shopping"), ("Macy's", "Shopping"), ("Nordstrom", "Shopping"),
-    ("Sephora", "Shopping"), ("Nike", "Shopping"), ("Adidas", "Shopping"),
-    ("Bookstore", "Shopping"), ("Clothing Outlet", "Shopping"), ("Retail", "Shopping"),
+    ("Amazon", "Shopping"), ("Amazon.com", "Shopping"), ("Amazon.in", "Shopping"),
+    ("Flipkart", "Shopping"), ("Myntra", "Shopping"), ("Ajio", "Shopping"),
+    ("Nykaa", "Shopping"), ("Meesho", "Shopping"), ("Tata CLiQ", "Shopping"),
+    ("Walmart", "Shopping"), ("Target", "Shopping"), ("Best Buy", "Shopping"), 
+    ("Apple Store", "Shopping"), ("Home Depot", "Shopping"), ("Lowe's", "Shopping"), 
+    ("IKEA", "Shopping"), ("Zara", "Shopping"), ("H&M", "Shopping"), 
+    ("Macy's", "Shopping"), ("Nordstrom", "Shopping"), ("Sephora", "Shopping"), 
+    ("Nike", "Shopping"), ("Adidas", "Shopping"), ("Bookstore", "Shopping"), 
+    ("Clothing Outlet", "Shopping"), ("Retail Store", "Shopping"), ("Reliance Digital", "Shopping"),
     
     # Utilities
     ("PG&E", "Utilities"), ("Con Edison", "Utilities"), ("AT&T", "Utilities"),
     ("Verizon Wireless", "Utilities"), ("T-Mobile", "Utilities"), ("Comcast Xfinity", "Utilities"),
     ("Spectrum Internet", "Utilities"), ("Water Bill", "Utilities"), ("Electric Bill", "Utilities"),
     ("Trash Collection", "Utilities"), ("City Water", "Utilities"), ("Power Co", "Utilities"),
+    ("Airtel", "Utilities"), ("Jio", "Utilities"), ("Vodafone Idea", "Utilities"),
+    ("BESCOM", "Utilities"), ("BSES", "Utilities"), ("Electricity Board", "Utilities"),
     
     # Entertainment
     ("Netflix", "Entertainment"), ("Spotify", "Entertainment"), ("Hulu", "Entertainment"),
@@ -146,11 +155,14 @@ TRAINING_DATA = [
     ("Direct Deposit", "Income"), ("Payroll", "Income"), ("Salary", "Income"),
     ("Upwork Freelance", "Income"), ("Fiverr", "Income"), ("Dividend", "Income"),
     ("Interest Payment", "Income"), ("Client Invoice", "Income"), ("Refund", "Income"),
+    ("UPI Transfer Received", "Income"), ("IMPS Credit", "Income"), ("NEFT Inward", "Income"),
     
     # Investments
     ("Vanguard", "Investments"), ("Fidelity", "Investments"), ("Charles Schwab", "Investments"),
     ("Robinhood", "Investments"), ("Coinbase", "Investments"), ("E-Trade", "Investments"),
-    ("Stock Purchase", "Investments"), ("Crypto Buy", "Investments"), ("401k Contribution", "Investments")
+    ("Stock Purchase", "Investments"), ("Crypto Buy", "Investments"), ("401k Contribution", "Investments"),
+    ("Zerodha", "Investments"), ("Groww", "Investments"), ("Upstox", "Investments"), 
+    ("Mutual Fund SIP", "Investments"), ("Angel One", "Investments")
 ]
 
 # Initialize and train the model immediately on load

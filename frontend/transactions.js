@@ -18,10 +18,9 @@ function getAuthHeaders(baseHeaders = {}) {
 }
 
 async function fetchInitialData() {
-    if (localStorage.getItem('hasDataUploaded') === 'false') {
-        transactions = [];
-        pendingConfirmations = [];
-        return true;
+    if (localStorage.getItem('hasDataUploaded') === 'false' && localStorage.getItem('user')) {
+        // If explicitly set to false locally, skip fetch to speed up empty state loading
+        // However, if we just logged in, we must fetch to check server state.
     }
 
     try {
@@ -31,6 +30,14 @@ async function fetchInitialData() {
         const data = await response.json();
         transactions = data.transactions;
         pendingConfirmations = data.pendingConfirmations;
+        
+        // Sync local UI state with server truth so data persists across logins/devices
+        if (transactions && transactions.length > 0) {
+            localStorage.setItem('hasDataUploaded', 'true');
+        } else {
+            localStorage.setItem('hasDataUploaded', 'false');
+        }
+        
         return true;
     } catch (e) {
         console.error("Failed to connect to backend:", e);

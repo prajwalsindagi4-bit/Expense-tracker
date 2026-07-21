@@ -349,15 +349,8 @@
                     <h1 class="page-title">Spendings</h1>
                     <p class="subtitle">See exactly where your money goes — categorized and live.</p>
                 </div>
-                <div style="display: flex; gap: 0.75rem; align-items: center;">
-                    <select class="form-input" id="spendings-month-select" style="width: 180px; padding: 0.5rem 0.75rem; font-size: 0.85rem;">
-                        <option value="5">June 2026</option>
-                        <option value="4">May 2026</option>
-                        <option value="3">April 2026</option>
-                        <option value="2">March 2026</option>
-                        <option value="1">February 2026</option>
-                        <option value="0">January 2026</option>
-                    </select>
+                <div id="spendings-filter-container" style="display: flex; gap: 0.75rem; align-items: center;">
+                    <!-- Dynamically populated by JS (Year & Month dropdowns) -->
                 </div>
             </header>
 
@@ -775,5 +768,41 @@
     <script src="whatif.js"></script>
     <script src="app.js"></script>
 
+    <!-- CSV Upload Modal -->
+    <div class="modal-overlay" id="upload-csv-modal">
+        <div class="modal-content" style="max-width: 400px; padding: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem; margin-bottom: 1.5rem;">
+                <h3 style="font-weight: 500; font-size: 1.1rem; color: var(--text-primary);">Statement Details</h3>
+                <button id="close-upload-modal-btn" style="background: none; border: none; color: var(--text-muted); cursor: pointer;"><i data-lucide="x"></i></button>
+            </div>
+            
+            <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.5rem; line-height: 1.5;">Please specify the exact Month and Year for this statement so we can perfectly tag your transactions.</p>
+            
+            <div style="display: flex; gap: 1rem; margin-bottom: 2rem;">
+                <select id="upload-month" class="form-input" style="flex: 1;">
+                    <option value="01">January</option>
+                    <option value="02">February</option>
+                    <option value="03">March</option>
+                    <option value="04">April</option>
+                    <option value="05">May</option>
+                    <option value="06">June</option>
+                    <option value="07" selected>July</option>
+                    <option value="08">August</option>
+                    <option value="09">September</option>
+                    <option value="10">October</option>
+                    <option value="11">November</option>
+                    <option value="12">December</option>
+                </select>
+                <select id="upload-year" class="form-input" style="flex: 1;">
+                    <option value="2024">2024</option>
+                    <option value="2025">2025</option>
+                    <option value="2026" selected>2026</option>
+                    <option value="2027">2027</option>
+                </select>
+            </div>
+            
+            <button id="submit-upload-modal-btn" style="width: 100%; padding: 0.85rem; background: var(--accent); color: #fff; border: none; border-radius: 8px; font-weight: 500; cursor: pointer;">Upload Statement</button>
+        </div>
+    </div>
 </body>
 </html>

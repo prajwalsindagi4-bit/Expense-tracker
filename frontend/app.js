@@ -23,6 +23,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 function initApp() {
     // 1. Initialize Icons
     lucide.createIcons();
+    
+    // Build dynamic spendings filter based on loaded data
+    buildSpendingsFilter();
 
     // 2. Navigation routing
     const navItems = document.querySelectorAll('.nav-item');
@@ -119,59 +122,71 @@ function initApp() {
         renderSpendings();
     });
 
-    // 9. Settings Data Sync
+    // 9. Settings Data Sync (with Modal prompt)
     const btnSyncData = document.getElementById('btn-sync-data');
-    if (btnSyncData) {
-        btnSyncData.addEventListener('click', async () => {
+    const uploadModal = document.getElementById('upload-csv-modal');
+    const closeUploadModalBtn = document.getElementById('close-upload-modal-btn');
+    const submitUploadBtn = document.getElementById('submit-upload-modal-btn');
+    
+    if (btnSyncData && uploadModal) {
+        btnSyncData.addEventListener('click', () => {
             const fileInput = document.getElementById('csv-upload-input');
-            const file = fileInput && fileInput.files[0];
-            
-            const btn = btnSyncData;
-            const originalHTML = btn.innerHTML;
-            btn.innerHTML = '<i data-lucide="loader-2" style="width:16px; height:16px; display:inline-block; vertical-align:middle; margin-right:6px;" class="spin"></i> Syncing...';
-            lucide.createIcons();
-
-            if (file) {
-                try {
-                    const formData = new FormData();
-                    formData.append('file', file);
-                    
-                    const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-                        ? 'http://localhost:8000/api' 
-                        : '/api';
-                    
-                    const userStr = localStorage.getItem('user');
-                    const headers = {};
-                    if (userStr) {
-                        const user = JSON.parse(userStr);
-                        headers['X-User-Id'] = user.id;
-                    }
-                    
-                    const response = await fetch(`${API_BASE}/upload-statement`, {
-                        method: 'POST',
-                        headers: headers,
-                        body: formData
-                    });
-                    
-                    if (!response.ok) {
-                        const errData = await response.json().catch(() => null);
-                        const errMsg = errData && errData.error ? errData.error : await response.text();
-                        throw new Error(`Backend Error (${response.status}): ${errMsg}`);
-                    }
-                    
-                    localStorage.setItem('hasDataUploaded', 'true');
-                    window.location.reload();
-                } catch (e) {
-                    console.error("Upload failed:", e);
-                    alert("Failed to upload statement.\n\n" + e.message);
-                    btn.innerHTML = originalHTML;
-                    lucide.createIcons();
-                }
+            if (fileInput && fileInput.files[0]) {
+                uploadModal.classList.add('active');
             } else {
-                setTimeout(() => {
-                    localStorage.setItem('hasDataUploaded', 'true');
-                    window.location.reload();
-                }, 1000);
+                alert('Please select a CSV file first.');
+            }
+        });
+        
+        closeUploadModalBtn.addEventListener('click', () => {
+            uploadModal.classList.remove('active');
+        });
+        
+        submitUploadBtn.addEventListener('click', async () => {
+            const fileInput = document.getElementById('csv-upload-input');
+            const file = fileInput.files[0];
+            
+            const selectedMonth = document.getElementById('upload-month').value;
+            const selectedYear = document.getElementById('upload-year').value;
+            
+            submitUploadBtn.innerHTML = '<i data-lucide="loader-2" class="spin" style="width:16px; height:16px; display:inline-block; vertical-align:middle; margin-right:6px;"></i> Uploading...';
+            lucide.createIcons();
+            
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('statementMonth', selectedMonth);
+                formData.append('statementYear', selectedYear);
+                
+                const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+                    ? 'http://localhost:8000/api' 
+                    : '/api';
+                
+                const userStr = localStorage.getItem('user');
+                const headers = {};
+                if (userStr) {
+                    const user = JSON.parse(userStr);
+                    headers['X-User-Id'] = user.id;
+                }
+                
+                const response = await fetch(`${API_BASE}/upload-statement`, {
+                    method: 'POST',
+                    headers: headers,
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => null);
+                    const errMsg = errData && errData.error ? errData.error : await response.text();
+                    throw new Error(`Backend Error (${response.status}): ${errMsg}`);
+                }
+                
+                localStorage.setItem('hasDataUploaded', 'true');
+                window.location.reload();
+            } catch (e) {
+                console.error("Upload failed:", e);
+                alert("Upload failed. Check console for details.");
+                submitUploadBtn.innerHTML = 'Upload Statement';
             }
         });
     }
@@ -908,13 +923,94 @@ async function submitP2PConfirmation() {
 
 // Opportunities & Blind Spots lists rendering
 // Spendings categorized breakdown renderer
+// Dynamically build Year and Month selectors based on transaction data
+function buildSpendingsFilter() {
+    const container = document.getElementById('spendings-filter-container');
+    if (!container || transactions.length === 0) return;
+    
+    // Extract unique years and months from data
+    const availableDates = {};
+    transactions.forEach(t => {
+        const d = new Date(t.date);
+        const y = d.getFullYear();
+        const m = d.getMonth();
+        if (!availableDates[y]) availableDates[y] = new Set();
+        availableDates[y].add(m);
+    });
+    
+    const years = Object.keys(availableDates).map(y => parseInt(y)).sort((a,b) => b - a); // Descending
+    const currentYear = new Date().getFullYear();
+    const currentMonth = new Date().getMonth();
+    
+    // Determine default selected year (most recent year that has data, or current year if it has data)
+    let selectedYear = years.includes(currentYear) ? currentYear : years[0];
+    
+    let html = '';
+    
+    // If data spans multiple years, show Year dropdown
+    if (years.length > 1) {
+        html += `<select class="form-input" id="spendings-year-select" style="width: 100px; padding: 0.5rem 0.75rem; font-size: 0.85rem;">`;
+        years.forEach(y => {
+            html += `<option value="${y}" ${y === selectedYear ? 'selected' : ''}>${y}</option>`;
+        });
+        html += `</select>`;
+    } else {
+        // Hidden input just so logic doesn't break
+        html += `<input type="hidden" id="spendings-year-select" value="${selectedYear}">`;
+    }
+    
+    // Month dropdown
+    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    html += `<select class="form-input" id="spendings-month-select" style="width: 150px; padding: 0.5rem 0.75rem; font-size: 0.85rem;"></select>`;
+    
+    container.innerHTML = html;
+    
+    const yearSelect = document.getElementById('spendings-year-select');
+    const monthSelect = document.getElementById('spendings-month-select');
+    
+    // Function to populate months based on selected year
+    const populateMonths = (year) => {
+        const monthsForYear = Array.from(availableDates[year] || []).sort((a,b) => b - a);
+        monthSelect.innerHTML = '';
+        if (monthsForYear.length === 0) {
+            monthSelect.innerHTML = '<option value="">No data</option>';
+            return;
+        }
+        
+        let selectedMonth = monthsForYear.includes(currentMonth) && year === currentYear ? currentMonth : monthsForYear[0];
+        
+        monthsForYear.forEach(m => {
+            monthSelect.innerHTML += `<option value="${m}" ${m === selectedMonth ? 'selected' : ''}>${monthNames[m]} ${years.length === 1 ? year : ''}</option>`;
+        });
+    };
+    
+    populateMonths(selectedYear);
+    
+    // Add event listeners
+    if (years.length > 1) {
+        yearSelect.addEventListener('change', () => {
+            populateMonths(parseInt(yearSelect.value));
+            renderSpendings();
+        });
+    }
+    
+    monthSelect.addEventListener('change', () => {
+        renderSpendings();
+    });
+}
+
 function renderSpendings() {
     const monthSelect = document.getElementById('spendings-month-select');
-    if (!monthSelect) return;
+    const yearSelect = document.getElementById('spendings-year-select');
+    
+    if (!monthSelect || !yearSelect) return;
+    
     const selectedMonth = parseInt(monthSelect.value);
-    const year = 2026;
+    const year = parseInt(yearSelect.value);
+    
+    if (isNaN(selectedMonth) || isNaN(year)) return;
 
-    // Filter expense transactions for the selected month
+    // Filter expense transactions for the selected month and year
     const monthExpenses = transactions.filter(t => {
         const d = new Date(t.date);
         return d.getMonth() === selectedMonth && d.getFullYear() === year && t.flow === 'expense';

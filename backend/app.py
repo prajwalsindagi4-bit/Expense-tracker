@@ -28,6 +28,17 @@ key: str = os.environ.get("SUPABASE_KEY", "")
 
 try:
     supabase: Client = create_client(url, key)
+    
+    # Auto-train AI with historical user corrections on boot
+    try:
+        feedback_res = supabase.table('ai_feedback').select('description, category').execute()
+        if feedback_res.data:
+            feedback_data = [(row['description'], row['category']) for row in feedback_res.data]
+            ai_model.train_batch(feedback_data)
+            print(f"Successfully tuned AI with {len(feedback_data)} personal corrections from DB.")
+    except Exception as ai_init_err:
+        print("Could not load AI feedback from DB:", ai_init_err)
+        
 except Exception as e:
     print(f"Failed to initialize Supabase: {e}")
     supabase = None
@@ -243,7 +254,20 @@ def update_transaction_category(tx_id):
         if len(res.data) == 0:
             return jsonify({'error': 'Transaction not found or unauthorized'}), 404
             
-        return jsonify({'status': 'success', 'transaction': res.data[0]})
+        updated_tx = res.data[0]
+        
+        # Log feedback for AI self-tuning
+        try:
+            supabase.table('ai_feedback').insert({
+                'user_id': user_id,
+                'transaction_id': tx_id,
+                'description': updated_tx.get('description', ''),
+                'category': new_category
+            }).execute()
+        except Exception as ai_err:
+            print("Failed to save AI feedback:", ai_err)
+            
+        return jsonify({'status': 'success', 'transaction': updated_tx})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -380,6 +404,9 @@ def upload_statement():
     if file.filename == '':
         return jsonify({'error': 'No file selected.'}), 400
         
+    statement_month = request.form.get('statementMonth', datetime.now().strftime("%m"))
+    statement_year = request.form.get('statementYear', datetime.now().strftime("%Y"))
+        
     try:
         stream = io.StringIO(file.stream.read().decode("utf-8-sig", errors="replace"), newline=None)
         csv_input = csv.reader(stream)
@@ -416,14 +443,28 @@ def upload_statement():
             date_val = row[date_idx].strip()
             
             # Format Date
-            formatted_date = datetime.now().strftime("%Y-%m-%d")
+            formatted_date = f"{statement_year}-{statement_month.zfill(2)}-01"
             try:
                 if '/' in date_val:
                     parts = date_val.split('/')
-                    if len(parts) == 3 and len(parts[2]) == 4: 
-                        formatted_date = f"{parts[2]}-{parts[1]:0>2}-{parts[0]:0>2}"
+                    if len(parts) == 3: 
+                        if len(parts[2]) == 4: # DD/MM/YYYY
+                            formatted_date = f"{parts[2]}-{parts[1]:0>2}-{parts[0]:0>2}"
+                        elif len(parts[0]) == 4: # YYYY/MM/DD
+                            formatted_date = f"{parts[0]}-{parts[1]:0>2}-{parts[2]:0>2}"
+                    elif len(parts) == 2: # DD/MM
+                        formatted_date = f"{statement_year}-{parts[1]:0>2}-{parts[0]:0>2}"
                 elif '-' in date_val:
-                    formatted_date = date_val
+                    parts = date_val.split('-')
+                    if len(parts) == 3: 
+                        if len(parts[0]) == 4: # YYYY-MM-DD
+                            formatted_date = f"{parts[0]}-{parts[1]:0>2}-{parts[2]:0>2}"
+                        elif len(parts[2]) == 4: # DD-MM-YYYY
+                            formatted_date = f"{parts[2]}-{parts[1]:0>2}-{parts[0]:0>2}"
+                        else:
+                            formatted_date = date_val
+                    elif len(parts) == 2: # DD-MM
+                        formatted_date = f"{statement_year}-{parts[1]:0>2}-{parts[0]:0>2}"
             except:
                 pass
             
