@@ -10,6 +10,7 @@ import hashlib
 import uuid
 import os
 import json
+import re
 from dotenv import load_dotenv
 from supabase import create_client, Client
 
@@ -427,7 +428,8 @@ def upload_statement():
         for row in csv_input:
             if len(row) <= max(date_idx, desc_idx, amt_idx): continue
             
-            raw_amt = row[amt_idx].replace(',', '').strip()
+            # Strip currency symbols and commas before converting to float
+            raw_amt = re.sub(r'[^\d.-]', '', row[amt_idx])
             if not raw_amt: continue
             
             try:

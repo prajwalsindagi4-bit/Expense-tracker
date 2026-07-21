@@ -256,9 +256,17 @@ function updateDashboardUI() {
         `;
     });
 
-    // 2. Update stats indicators (For June 2026)
-    const currentMonthNum = 5; // June (zero-indexed)
-    const currentYear = 2026;
+    // 2. Update stats indicators dynamically based on most recent transaction date
+    let currentMonthNum = new Date().getMonth();
+    let currentYear = new Date().getFullYear();
+    
+    if (transactions.length > 0) {
+        // Find the most recent date in the transactions
+        const latestDateStr = transactions.reduce((latest, t) => t.date > latest ? t.date : latest, '1970-01-01');
+        const latestDate = new Date(latestDateStr);
+        currentMonthNum = latestDate.getMonth();
+        currentYear = latestDate.getFullYear();
+    }
     
     const thisMonthTxs = transactions.filter(t => {
         const d = new Date(t.date);
