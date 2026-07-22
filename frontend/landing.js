@@ -90,8 +90,6 @@
     }
 
     let introFinished = false;
-    let maxFillProgress = 0;
-    let maxScrollProgress = 0;
 
     function updateCardAnimation() {
         if (!introFinished || !creditCard || !cardHero) return;
@@ -102,30 +100,20 @@
 
         let s = (scrollY - heroTop) / (heroHeight - window.innerHeight);
         s = Math.max(0, Math.min(1, s));
-        
-        if (s > maxScrollProgress) {
-            maxScrollProgress = s;
-        }
 
         const heroGreeting = document.getElementById('hero-greeting');
         if (heroGreeting) {
             if (s <= 0.20) {
-                // Track max fill progress so it stays filled when scrolling up
                 const p = s / 0.20;
-                if (p > maxFillProgress) maxFillProgress = p;
-
                 heroGreeting.style.opacity = 1;
-                heroGreeting.style.backgroundPosition = `${100 - (maxFillProgress * 100)}% 0`;
+                heroGreeting.style.backgroundPosition = `${100 - (p * 100)}% 0`;
                 heroGreeting.style.transform = `translate(-50%, -50%)`;
             } else if (s <= 0.25) {
-                maxFillProgress = 1; // Ensure it's fully tracked
-                // Fade out full text quickly and move it slightly up
                 const p = (s - 0.20) / 0.05;
                 heroGreeting.style.opacity = 1 - p;
                 heroGreeting.style.backgroundPosition = `0% 0`;
                 heroGreeting.style.transform = `translate(-50%, calc(-50% - ${p * 50}px))`;
             } else {
-                maxFillProgress = 1;
                 heroGreeting.style.opacity = 0;
             }
         }
@@ -177,8 +165,7 @@
 
         const scrollHint = document.getElementById('scroll-hint');
         if (scrollHint) {
-            // Use maxScrollProgress so it doesn't reappear if user scrolls back up
-            scrollHint.style.opacity = Math.max(0, 1 - maxScrollProgress * 10);
+            scrollHint.style.opacity = Math.max(0, 1 - s * 10);
         }
     }
 
