@@ -90,6 +90,7 @@
     }
 
     let introFinished = false;
+    let maxCardProgress = 0;
 
     function updateCardAnimation() {
         if (!introFinished || !creditCard || !cardHero) return;
@@ -118,30 +119,35 @@
             }
         }
 
+        if (s > maxCardProgress) {
+            maxCardProgress = s;
+        }
+        
+        let cardS = maxCardProgress;
         let rotateX = 0, rotateY = 0, rotateZ = 0, scale = 1, translateY = window.innerHeight, opacity = 0;
 
-        if (s <= 0.25) {
+        if (cardS <= 0.25) {
             translateY = window.innerHeight;
             opacity = 0;
-        } else if (s <= 0.45) {
+        } else if (cardS <= 0.45) {
             // Fade in and rise from bottom
-            const p = (s - 0.25) / 0.20;
+            const p = (cardS - 0.25) / 0.20;
             rotateX = 40 - (p * 40);
             rotateY = 0;
             scale = 0.5 + (p * 0.5);
             translateY = window.innerHeight - (p * window.innerHeight);
             opacity = p;
-        } else if (s <= 0.75) {
+        } else if (cardS <= 0.75) {
             // Spin
-            const p = (s - 0.45) / 0.30;
+            const p = (cardS - 0.45) / 0.30;
             rotateX = 0;
             rotateY = p * 360;
             scale = 1.0;
             translateY = 0;
             opacity = 1;
-        } else if (s <= 0.85) {
+        } else if (cardS <= 0.85) {
             // Scale up
-            const p = (s - 0.75) / 0.10;
+            const p = (cardS - 0.75) / 0.10;
             rotateX = 0;
             rotateY = 360;
             scale = 1.0 + (p * 0.8);
@@ -149,7 +155,7 @@
             opacity = 1 - (p * 0.6);
         } else {
             // Fade out
-            const p = (s - 0.85) / 0.15;
+            const p = (cardS - 0.85) / 0.15;
             rotateX = 0;
             rotateY = 360;
             scale = 1.8 + (p * 1.0);
