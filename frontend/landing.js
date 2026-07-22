@@ -51,6 +51,14 @@
         if (progressBar) {
             progressBar.style.width = scrollPercent + '%';
         }
+
+        const lineContainer = document.getElementById('connecting-line-container');
+        if (lineContainer) {
+            const rect = lineContainer.getBoundingClientRect();
+            let progress = (window.innerHeight * 0.8 - rect.top) / rect.height;
+            progress = Math.max(0, Math.min(1, progress));
+            lineContainer.style.clipPath = `polygon(0 0, 100% 0, 100% ${progress * 100}%, 0 ${progress * 100}%)`;
+        }
     }
 
     // ===== INTRO ANIMATION (Auto-plays on load) =====
@@ -220,11 +228,19 @@
 
     const revealObserver = new IntersectionObserver(
         (entries) => {
-            entries.forEach((entry) => {
-                if (entry.isIntersecting) {
+            const intersecting = entries.filter(e => e.isIntersecting).sort((a, b) => {
+                return a.boundingClientRect.top - b.boundingClientRect.top;
+            });
+            
+            let delay = 0;
+            intersecting.forEach((entry) => {
+                entry.target.style.transitionDelay = `${delay}s`;
+                delay += 0.15;
+                
+                requestAnimationFrame(() => {
                     entry.target.classList.add('visible');
-                    revealObserver.unobserve(entry.target);
-                }
+                });
+                revealObserver.unobserve(entry.target);
             });
         },
         {

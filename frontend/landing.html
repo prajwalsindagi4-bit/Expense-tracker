@@ -38,7 +38,7 @@
             <li><a href="#features">Features</a></li>
             <li><a href="#how-it-works">How It Works</a></li>
             <li><a href="#security">Security</a></li>
-            <li><a href="#testimonials">Reviews</a></li>
+            <li><a href="#founder">About Us</a></li>
         </ul>
 
         <div class="nav-actions">
@@ -116,6 +116,36 @@
             </div> <!-- Close dark-scene-wrapper -->
         </div>
     </section>
+
+    <!-- ===== CONNECTING LINE ===== -->
+    <div id="connecting-line-container" style="position: absolute; top: 400vh; left: 0; width: 100%; height: calc(100% - 400vh); z-index: 0; pointer-events: none; overflow: hidden; opacity: 0.7;">
+        <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <defs>
+                <linearGradient id="line-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stop-color="#ffffff" stop-opacity="0" />
+                    <stop offset="10%" stop-color="#ffffff" stop-opacity="0.8" />
+                    <stop offset="50%" stop-color="#ffffff" stop-opacity="0.8" />
+                    <stop offset="90%" stop-color="#ffffff" stop-opacity="0.8" />
+                    <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+                </linearGradient>
+                <filter id="glow-line" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
+                    <feMerge>
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+            </defs>
+            <path id="connecting-line-path" 
+                  d="M 50,0 C 90,10 10,20 50,30 C 90,40 10,50 50,60 C 90,70 10,80 50,90 C 90,95 50,100 50,100" 
+                  vector-effect="non-scaling-stroke" 
+                  fill="none" 
+                  stroke="url(#line-grad)" 
+                  stroke-width="1.5" 
+                  stroke-dasharray="2 4"
+                  filter="url(#glow-line)" />
+        </svg>
+    </div>
 
     <!-- ===== HERO SECTION — Phone + text, revealed after card ===== -->
     <section id="hero">
@@ -404,8 +434,9 @@
     <section id="founder" style="padding: 4rem 0;">
         <div class="section-inner" style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 4rem; max-width: 1000px; margin: 0 auto; padding: 0 2rem;">
             <!-- Left side: Title -->
-            <div style="flex: 1; min-width: 250px;">
-                <h2 class="section-title scroll-reveal" style="text-align: left; margin: 0; font-size: clamp(2.5rem, 4vw, 3.5rem); line-height: 1.2;">Meet the Founder</h2>
+            <div style="flex: 1; min-width: 250px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center;">
+                <span class="scroll-reveal" style="font-size: clamp(1.5rem, 2vw, 2rem); font-weight: 400; color: var(--text-secondary, rgba(255,255,255,0.7)); line-height: 1; margin-bottom: 0.2rem; letter-spacing: 0.02em;">Meet the</span>
+                <h2 class="section-title scroll-reveal" style="text-align: left; margin: 0; font-size: clamp(4rem, 6vw, 6rem); line-height: 0.95; font-weight: 800; letter-spacing: -0.02em;">Founder</h2>
             </div>
             <!-- Right side: Content -->
             <div class="founder-card scroll-reveal" style="flex: 1.5; min-width: 300px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); padding: 3rem; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: left;">
