@@ -51,14 +51,6 @@
         if (progressBar) {
             progressBar.style.width = scrollPercent + '%';
         }
-
-        const lineContainer = document.getElementById('connecting-line-container');
-        if (lineContainer) {
-            const rect = lineContainer.getBoundingClientRect();
-            let progress = (window.innerHeight * 0.8 - rect.top) / rect.height;
-            progress = Math.max(0, Math.min(1, progress));
-            lineContainer.style.clipPath = `polygon(0 0, 100% 0, 100% ${progress * 100}%, 0 ${progress * 100}%)`;
-        }
     }
 
     // ===== INTRO ANIMATION (Auto-plays on load) =====
@@ -93,7 +85,7 @@
     let maxCardProgress = 0;
 
     function updateCardAnimation() {
-        if (!introFinished || !creditCard || !cardHero) return;
+        if (introFinished || !creditCard || !cardHero) return;
 
         const heroTop = cardHero.offsetTop;
         const heroHeight = cardHero.offsetHeight;
@@ -101,6 +93,28 @@
 
         let s = (scrollY - heroTop) / (heroHeight - window.innerHeight);
         s = Math.max(0, Math.min(1, s));
+
+        // When animation is fully complete, collapse the space and seamlessly adjust scroll
+        if (s >= 0.99 && !introFinished) {
+            introFinished = true;
+            
+            if (creditCard) creditCard.style.display = 'none';
+            const heroGreeting = document.getElementById('hero-greeting');
+            if (heroGreeting) {
+                heroGreeting.style.opacity = 1;
+                heroGreeting.style.backgroundPosition = '0% 0';
+                heroGreeting.style.transform = 'translate(-50%, -50%)';
+            }
+            const scrollHint = document.getElementById('scroll-hint');
+            if (scrollHint) scrollHint.style.display = 'none';
+
+            const diff = heroHeight - window.innerHeight;
+            if (diff > 0) {
+                cardHero.style.height = '100vh';
+                window.scrollBy({ top: -diff, left: 0, behavior: 'instant' });
+            }
+            return;
+        }
 
         const heroGreeting = document.getElementById('hero-greeting');
         if (heroGreeting) {

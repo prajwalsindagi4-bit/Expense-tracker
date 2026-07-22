@@ -529,15 +529,9 @@ body {
     align-items: center;
     justify-content: center;
     padding: 6rem 3rem;
-    background: transparent;
+    background: var(--bg-base);
     position: relative;
     overflow: hidden;
-    z-index: 1;
-}
-
-section {
-    position: relative;
-    z-index: 1;
 }
 
 .hero-content {
