@@ -223,7 +223,7 @@ body {
    CARD HERO — Automatic Intro + Scroll Card
    ════════════════════════════════════════ */
 #card-hero {
-    height: 400vh;
+    height: 700vh;
     position: relative;
     background: #000;
 }

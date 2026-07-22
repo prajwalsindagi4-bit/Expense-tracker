@@ -82,7 +82,6 @@
     }
 
     let introFinished = false;
-    let maxCardProgress = 0;
 
     function updateCardAnimation() {
         if (!creditCard || !cardHero) return;
@@ -93,6 +92,29 @@
 
         let s = (scrollY - heroTop) / (heroHeight - window.innerHeight);
         s = Math.max(0, Math.min(1, s));
+
+        if (s >= 0.99 && !introFinished) {
+            introFinished = true;
+            
+            if (creditCard) creditCard.style.display = 'none';
+            const heroGreeting = document.getElementById('hero-greeting');
+            if (heroGreeting) {
+                heroGreeting.style.opacity = 1;
+                heroGreeting.style.backgroundPosition = '0% 0';
+                heroGreeting.style.transform = 'translate(-50%, -50%)';
+            }
+            const scrollHint = document.getElementById('scroll-hint');
+            if (scrollHint) scrollHint.style.display = 'none';
+
+            const diff = heroHeight - window.innerHeight;
+            if (diff > 0) {
+                cardHero.style.height = '100vh';
+                window.scrollBy({ top: -diff, left: 0, behavior: 'instant' });
+            }
+            return;
+        }
+
+        if (introFinished) return;
 
         const heroGreeting = document.getElementById('hero-greeting');
         if (heroGreeting) {
