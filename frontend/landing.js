@@ -85,7 +85,7 @@
     let maxCardProgress = 0;
 
     function updateCardAnimation() {
-        if (introFinished || !creditCard || !cardHero) return;
+        if (!creditCard || !cardHero) return;
 
         const heroTop = cardHero.offsetTop;
         const heroHeight = cardHero.offsetHeight;
@@ -93,28 +93,6 @@
 
         let s = (scrollY - heroTop) / (heroHeight - window.innerHeight);
         s = Math.max(0, Math.min(1, s));
-
-        // When animation is fully complete, collapse the space and seamlessly adjust scroll
-        if (s >= 0.99 && !introFinished) {
-            introFinished = true;
-            
-            if (creditCard) creditCard.style.display = 'none';
-            const heroGreeting = document.getElementById('hero-greeting');
-            if (heroGreeting) {
-                heroGreeting.style.opacity = 1;
-                heroGreeting.style.backgroundPosition = '0% 0';
-                heroGreeting.style.transform = 'translate(-50%, -50%)';
-            }
-            const scrollHint = document.getElementById('scroll-hint');
-            if (scrollHint) scrollHint.style.display = 'none';
-
-            const diff = heroHeight - window.innerHeight;
-            if (diff > 0) {
-                cardHero.style.height = '100vh';
-                window.scrollBy({ top: -diff, left: 0, behavior: 'instant' });
-            }
-            return;
-        }
 
         const heroGreeting = document.getElementById('hero-greeting');
         if (heroGreeting) {
@@ -133,35 +111,30 @@
             }
         }
 
-        if (s > maxCardProgress) {
-            maxCardProgress = s;
-        }
-        
-        let cardS = maxCardProgress;
         let rotateX = 0, rotateY = 0, rotateZ = 0, scale = 1, translateY = window.innerHeight, opacity = 0;
 
-        if (cardS <= 0.25) {
+        if (s <= 0.25) {
             translateY = window.innerHeight;
             opacity = 0;
-        } else if (cardS <= 0.45) {
+        } else if (s <= 0.45) {
             // Fade in and rise from bottom
-            const p = (cardS - 0.25) / 0.20;
+            const p = (s - 0.25) / 0.20;
             rotateX = 40 - (p * 40);
             rotateY = 0;
             scale = 0.5 + (p * 0.5);
             translateY = window.innerHeight - (p * window.innerHeight);
             opacity = p;
-        } else if (cardS <= 0.75) {
+        } else if (s <= 0.75) {
             // Spin
-            const p = (cardS - 0.45) / 0.30;
+            const p = (s - 0.45) / 0.30;
             rotateX = 0;
             rotateY = p * 360;
             scale = 1.0;
             translateY = 0;
             opacity = 1;
-        } else if (cardS <= 0.85) {
+        } else if (s <= 0.85) {
             // Scale up
-            const p = (cardS - 0.75) / 0.10;
+            const p = (s - 0.75) / 0.10;
             rotateX = 0;
             rotateY = 360;
             scale = 1.0 + (p * 0.8);
@@ -169,7 +142,7 @@
             opacity = 1 - (p * 0.6);
         } else {
             // Fade out
-            const p = (cardS - 0.85) / 0.15;
+            const p = (s - 0.85) / 0.15;
             rotateX = 0;
             rotateY = 360;
             scale = 1.8 + (p * 1.0);
@@ -182,9 +155,11 @@
             cardInner.style.transform = `translateY(${translateY}px) scale(${scale}) rotateX(${rotateX}deg) rotateY(${rotateY}deg) rotateZ(${rotateZ}deg)`;
         }
         creditCard.style.opacity = opacity;
+        creditCard.style.display = 'block'; // Ensure it's never hidden by the old logic
 
         const scrollHint = document.getElementById('scroll-hint');
         if (scrollHint) {
+            scrollHint.style.display = 'block';
             scrollHint.style.opacity = Math.max(0, 1 - s * 10);
         }
     }
